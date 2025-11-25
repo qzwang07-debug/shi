@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.ShopCommentMapper">
+
+    <resultMap type="com.zNova.system.domain.ShopComment" id="ShopCommentResult">
+        <result property="commentId"    column="comment_id"    />
+        <result property="productId"    column="product_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="orderId"    column="order_id"    />
+        <result property="star"    column="star"    />
+        <result property="content"    column="content"    />
+        <result property="replyContent"    column="reply_content"    />
+        <result property="replyTime"    column="reply_time"    />
+        <result property="isAnonymous"    column="is_anonymous"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="delFlag"    column="del_flag"    />
+    </resultMap>
+
+    <sql id="selectShopCommentVo">
+        select comment_id, product_id, user_id, order_id, star, content, reply_content, reply_time, is_anonymous, create_time, del_flag from shop_comment
+    </sql>
+
+    <select id="selectShopCommentList" parameterType="com.zNova.system.domain.ShopComment" resultMap="ShopCommentResult">
+        select
+        sc.comment_id,
+        sc.product_id,
+        sc.user_id,
+        sc.order_id,
+        sc.star,
+        sc.content,
+        sc.reply_content,
+        sc.reply_time,
+        sc.is_anonymous,
+        sc.create_time,
+        sc.del_flag,
+        au.nickname,
+        au.avatar
+        from shop_comment sc
+        left join app_user au on sc.user_id = au.user_id
+        <where>
+            <if test="productId != null "> and sc.product_id = #{productId}</if>
+            <if test="userId != null "> and sc.user_id = #{userId}</if>
+            <if test="orderId != null "> and sc.order_id = #{orderId}</if>
+            <if test="star != null "> and sc.star = #{star}</if>
+            and sc.del_flag = '0'
+        </where>
+        order by sc.create_time desc
+    </select>
+
+    <select id="selectShopCommentByCommentId" parameterType="Long" resultMap="ShopCommentResult">
+        <include refid="selectShopCommentVo"/>
+        where comment_id = #{commentId}
+    </select>
+
+    <insert id="insertShopComment" parameterType="com.zNova.system.domain.ShopComment" useGeneratedKeys="true" keyProperty="commentId">
+        insert into shop_comment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="productId != null">product_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="orderId != null">order_id,</if>
+            <if test="star != null">star,</if>
+            <if test="content != null">content,</if>
+            <if test="replyContent != null">reply_content,</if>
+            <if test="replyTime != null">reply_time,</if>
+            <if test="isAnonymous != null">is_anonymous,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="productId != null">#{productId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="orderId != null">#{orderId},</if>
+            <if test="star != null">#{star},</if>
+            <if test="content != null">#{content},</if>
+            <if test="replyContent != null">#{replyContent},</if>
+            <if test="replyTime != null">#{replyTime},</if>
+            <if test="isAnonymous != null">#{isAnonymous},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+        </trim>
+    </insert>
+
+    <update id="updateShopComment" parameterType="com.zNova.system.domain.ShopComment">
+        update shop_comment
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="productId != null">product_id = #{productId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="orderId != null">order_id = #{orderId},</if>
+            <if test="star != null">star = #{star},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="replyContent != null">reply_content = #{replyContent},</if>
+            <if test="replyTime != null">reply_time = #{replyTime},</if>
+            <if test="isAnonymous != null">is_anonymous = #{isAnonymous},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+        </trim>
+        where comment_id = #{commentId}
+    </update>
+
+    <delete id="deleteShopCommentByCommentId" parameterType="Long">
+        delete from shop_comment where comment_id = #{commentId}
+    </delete>
+
+    <delete id="deleteShopCommentByCommentIds" parameterType="String">
+        delete from shop_comment where comment_id in
+        <foreach item="commentId" collection="array" open="(" separator="," close=")">
+            #{commentId}
+        </foreach>
+    </delete>
+</mapper>

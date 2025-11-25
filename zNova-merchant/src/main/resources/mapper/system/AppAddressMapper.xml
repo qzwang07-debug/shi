@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.AppAddressMapper">
+    
+    <resultMap type="AppAddress" id="AppAddressResult">
+        <result property="addressId"    column="address_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="realName"    column="real_name"    />
+        <result property="phone"    column="phone"    />
+        <result property="province"    column="province"    />
+        <result property="city"    column="city"    />
+        <result property="district"    column="district"    />
+        <result property="detailAddress"    column="detail_address"    />
+        <result property="isDefault"    column="is_default"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectAppAddressVo">
+        select address_id, user_id, real_name, phone, province, city, district, detail_address, is_default, del_flag, create_time from app_address
+    </sql>
+
+    <select id="selectAppAddressList" parameterType="AppAddress" resultMap="AppAddressResult">
+        <include refid="selectAppAddressVo"/>
+        <where>  
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="realName != null  and realName != ''"> and real_name like concat('%', #{realName}, '%')</if>
+            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
+            <if test="province != null  and province != ''"> and province = #{province}</if>
+            <if test="city != null  and city != ''"> and city = #{city}</if>
+            <if test="district != null  and district != ''"> and district = #{district}</if>
+            <if test="detailAddress != null  and detailAddress != ''"> and detail_address = #{detailAddress}</if>
+            <if test="isDefault != null  and isDefault != ''"> and is_default = #{isDefault}</if>
+        </where>
+    </select>
+    
+    <select id="selectAppAddressByAddressId" parameterType="Long" resultMap="AppAddressResult">
+        <include refid="selectAppAddressVo"/>
+        where address_id = #{addressId}
+    </select>
+
+    <insert id="insertAppAddress" parameterType="AppAddress" useGeneratedKeys="true" keyProperty="addressId">
+        insert into app_address
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="realName != null and realName != ''">real_name,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="province != null">province,</if>
+            <if test="city != null">city,</if>
+            <if test="district != null">district,</if>
+            <if test="detailAddress != null and detailAddress != ''">detail_address,</if>
+            <if test="isDefault != null">is_default,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="realName != null and realName != ''">#{realName},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="province != null">#{province},</if>
+            <if test="city != null">#{city},</if>
+            <if test="district != null">#{district},</if>
+            <if test="detailAddress != null and detailAddress != ''">#{detailAddress},</if>
+            <if test="isDefault != null">#{isDefault},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateAppAddress" parameterType="AppAddress">
+        update app_address
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="realName != null and realName != ''">real_name = #{realName},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="detailAddress != null and detailAddress != ''">detail_address = #{detailAddress},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where address_id = #{addressId}
+    </update>
+
+    <delete id="deleteAppAddressByAddressId" parameterType="Long">
+        delete from app_address where address_id = #{addressId}
+    </delete>
+
+    <delete id="deleteAppAddressByAddressIds" parameterType="String">
+        delete from app_address where address_id in 
+        <foreach item="addressId" collection="array" open="(" separator="," close=")">
+            #{addressId}
+        </foreach>
+    </delete>
+</mapper>

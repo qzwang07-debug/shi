@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.BizComputerGoodsMapper">
+
+    <resultMap type="BizComputerGoods" id="BizComputerGoodsResult">
+        <result property="id" column="id"/>
+        <result property="productName" column="product_name"/>
+        <result property="productType" column="product_type"/>
+        <result property="rentPrice" column="rent_price"/>
+        <result property="salePrice" column="sale_price"/>
+        <result property="stockQuantity" column="stock_quantity"/>
+        <result property="availableRent" column="available_rent"/>
+        <result property="cpu" column="cpu"/>
+        <result property="motherboard" column="motherboard"/>
+        <result property="memory" column="memory"/>
+        <result property="ssd" column="ssd"/>
+        <result property="graphicsCard" column="graphics_card"/>
+        <result property="cooler" column="cooler"/>
+        <result property="powerSupply" column="power_supply"/>
+        <result property="chassis" column="chassis"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectBizComputerGoodsVo">
+        select id, product_name, product_type, rent_price, sale_price, stock_quantity,
+               available_rent, cpu, motherboard, memory, ssd, graphics_card, cooler,
+               power_supply, chassis, image_url, status, create_by, create_time,
+               update_by, update_time, remark
+        from biz_product
+    </sql>
+
+    <select id="selectBizComputerGoodsList" parameterType="BizComputerGoods" resultMap="BizComputerGoodsResult">
+        <include refid="selectBizComputerGoodsVo"/>
+        <where>
+            <if test="productName != null and productName != ''">
+                and product_name like concat('%', #{productName}, '%')
+            </if>
+            <if test="productType != null and productType != ''">
+                and product_type = #{productType}
+            </if>
+            <if test="cpu != null and cpu != ''">
+                and cpu like concat('%', #{cpu}, '%')
+            </if>
+            <if test="graphicsCard != null and graphicsCard != ''">
+                and graphics_card like concat('%', #{graphicsCard}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectBizComputerGoodsById" parameterType="Long" resultMap="BizComputerGoodsResult">
+        <include refid="selectBizComputerGoodsVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertBizComputerGoods" parameterType="BizComputerGoods" useGeneratedKeys="true" keyProperty="id">
+        insert into biz_product
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="productName != null and productName != ''">product_name,</if>
+            <if test="productType != null">product_type,</if>
+            <if test="rentPrice != null">rent_price,</if>
+            <if test="salePrice != null">sale_price,</if>
+            <if test="stockQuantity != null">stock_quantity,</if>
+            <if test="availableRent != null">available_rent,</if>
+            <if test="cpu != null">cpu,</if>
+            <if test="motherboard != null">motherboard,</if>
+            <if test="memory != null">memory,</if>
+            <if test="ssd != null">ssd,</if>
+            <if test="graphicsCard != null">graphics_card,</if>
+            <if test="cooler != null">cooler,</if>
+            <if test="powerSupply != null">power_supply,</if>
+            <if test="chassis != null">chassis,</if>
+            <if test="imageUrl != null">image_url,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+            <if test="gpuModel != null">gpu_model,</if>  <!-- 新增 -->
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="productName != null and productName != ''">#{productName},</if>
+            <if test="productType != null">#{productType},</if>
+            <if test="rentPrice != null">#{rentPrice},</if>
+            <if test="salePrice != null">#{salePrice},</if>
+            <if test="stockQuantity != null">#{stockQuantity},</if>
+            <if test="availableRent != null">#{availableRent},</if>
+            <if test="cpu != null">#{cpu},</if>
+            <if test="motherboard != null">#{motherboard},</if>
+            <if test="memory != null">#{memory},</if>
+            <if test="ssd != null">#{ssd},</if>
+            <if test="graphicsCard != null">#{graphicsCard},</if>
+            <if test="cooler != null">#{cooler},</if>
+            <if test="powerSupply != null">#{powerSupply},</if>
+            <if test="chassis != null">#{chassis},</if>
+            <if test="imageUrl != null">#{imageUrl},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="gpuModel != null">#{gpuModel},</if>  <!-- 新增 -->
+        </trim>
+    </insert>
+
+    <update id="updateBizComputerGoods" parameterType="BizComputerGoods">
+        update biz_product
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="productName != null and productName != ''">product_name = #{productName},</if>
+            <if test="productType != null">product_type = #{productType},</if>
+            <if test="rentPrice != null">rent_price = #{rentPrice},</if>
+            <if test="salePrice != null">sale_price = #{salePrice},</if>
+            <if test="stockQuantity != null">stock_quantity = #{stockQuantity},</if>
+            <if test="availableRent != null">available_rent = #{availableRent},</if>
+            <if test="cpu != null">cpu = #{cpu},</if>
+            <if test="motherboard != null">motherboard = #{motherboard},</if>
+            <if test="memory != null">memory = #{memory},</if>
+            <if test="ssd != null">ssd = #{ssd},</if>
+            <if test="graphicsCard != null">graphics_card = #{graphicsCard},</if>
+            <if test="cooler != null">cooler = #{cooler},</if>
+            <if test="powerSupply != null">power_supply = #{powerSupply},</if>
+            <if test="chassis != null">chassis = #{chassis},</if>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="gpuModel != null">gpu_model = #{gpuModel},</if>  <!-- 新增 -->
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBizComputerGoodsById" parameterType="Long">
+        delete from biz_product where id = #{id}
+    </delete>
+
+    <delete id="deleteBizComputerGoodsByIds" parameterType="String">
+        delete from biz_product where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectPerformanceById" resultType="com.zNova.system.domain.BizComputerGoods">
+        select
+        p.id,
+        c.single_core_score as cpuSingleCoreScore,
+        c.multi_core_score as cpuMultiCoreScore,
+        g.performance_score as gpuScore,
+        m.frequency as memoryFrequency
+        from biz_product p
+        left join hardware_cpu c on p.cpu = c.model  <!-- 关联CPU的model -->
+        left join hardware_gpu g on p.gpu_model = g.model  <!-- 关联GPU的model -->
+        left join hardware_memory m on p.memory_type = m.type
+        and p.memory_frequency = m.frequency  <!-- 关联内存的type和frequency -->
+        where p.id = #{id}
+    </select>
+</mapper>
