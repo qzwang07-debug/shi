@@ -1,30 +1,20 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-
-Vue.use(Router)
-
+import { createWebHistory, createRouter } from 'vue-router'
 /* Layout */
 import Layout from '@/layout'
 
 /**
  * Note: 路由配置项
  *
- * hidden: true                     // 当设置 true 的时候该路由不会再侧边栏出现 如401，login等页面，或者如一些编辑页面/edit/1
- * alwaysShow: true                 // 当你一个路由下面的 children 声明的路由大于1个时，自动会变成嵌套的模式--如组件页面
- *                                  // 只有一个时，会将那个子路由当做根路由显示在侧边栏--如引导页面
- *                                  // 若你想不管路由下面的 children 声明的个数都显示你的根路由
- *                                  // 你可以设置 alwaysShow: true，这样它就会忽略之前定义的规则，一直显示根路由
- * redirect: noRedirect             // 当设置 noRedirect 的时候该路由在面包屑导航中不可被点击
- * name:'router-name'               // 设定路由的名字，一定要填写不然使用<keep-alive>时会出现各种问题
- * query: '{"id": 1, "name": "ry"}' // 访问路由的默认传递参数
- * roles: ['admin', 'common']       // 访问路由的角色权限
- * permissions: ['a:a:a', 'b:b:b']  // 访问路由的菜单权限
+ * hidden: true                     // 当设置 true 的时候该路由不会再侧边栏出现
+ * alwaysShow: true                 // 强制显示根路由
+ * redirect: noRedirect             // 面包屑不可点击
+ * name:'router-name'               // 路由名称（必须填写）
  * meta : {
-    noCache: true                   // 如果设置为true，则不会被 <keep-alive> 缓存(默认 false)
-    title: 'title'                  // 设置该路由在侧边栏和面包屑中展示的名字
-    icon: 'svg-name'                // 设置该路由的图标，对应路径src/assets/icons/svg
-    breadcrumb: false               // 如果设置为false，则不会在breadcrumb面包屑中显示
-    activeMenu: '/system/user'      // 当路由设置了该属性，则会高亮相对应的侧边栏。
+    noCache: true                   // 不缓存
+    title: 'title'                  // 侧边栏和面包屑名称
+    icon: 'svg-name'                // 图标路径
+    breadcrumb: false               // 不在面包屑显示
+    activeMenu: '/system/user'      // 高亮对应侧边栏
   }
  */
 
@@ -37,7 +27,7 @@ export const constantRoutes = [
     children: [
       {
         path: '/redirect/:path(.*)',
-        component: () => import('@/views/redirect')
+        component: () => import('@/views/redirect/index.vue')
       }
     ]
   },
@@ -52,7 +42,7 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '/404',
+    path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404'),
     hidden: true
   },
@@ -64,10 +54,10 @@ export const constantRoutes = [
   {
     path: '',
     component: Layout,
-    redirect: 'index',
+    redirect: '/index',
     children: [
       {
-        path: 'index',
+        path: '/index',
         component: () => import('@/views/index'),
         name: 'Index',
         meta: { title: '首页', icon: 'dashboard', affix: true }
@@ -75,22 +65,148 @@ export const constantRoutes = [
     ]
   },
   {
-    path: '/user',
-    component: Layout,
-    hidden: true,
-    redirect: 'noredirect',
-    children: [
-      {
-        path: 'profile',
-        component: () => import('@/views/system/user/profile/index'),
-        name: 'Profile',
-        meta: { title: '个人中心', icon: 'user' }
-      }
-    ]
+    path: '/computer-market', // 访问路径
+    name: 'ComputerMarket',
+    component: () => import('@/views/computerMarket/mallHome.vue'), // 直接指向当前组件
+    hidden: true, // 不在若依侧边栏显示
+    meta: {
+      title: '电脑租售与硬件性能智能评估平台', // 浏览器标签页标题
+      noCache: true
+    }
+  },
+  // 修改购物车路由配置
+{
+  path: '/computer-market/shopping-cart',
+  name: 'ShoppingCart',
+component: () => import('@/views/computerMarket/cart/index.vue'), 
+  hidden: true,
+  meta: {
+    title: '购物车',
+    noCache: true
   }
+},
+ // 新增：租赁页面路由（rental.vue）
+  {
+    path: '/computer-market/rental',
+    name: 'ComputerRental',
+    component: () => import('@/views/computerMarket/shop/rental.vue'), // 注意匹配rental.vue的实际路径
+    hidden: true,
+    meta: {
+      title: '电脑租赁服务',
+      noCache: true
+    }
+  },
+// 找到出售页面的路由配置，修改 component 路径
+{
+  path: '/computer-market/sale',
+  name: 'ComputerSale',
+  // 修正路径：添加 shop/ 层级，匹配实际文件位置
+  component: () => import('@/views/computerMarket/shop/sale.vue'), 
+  hidden: true,
+  meta: {
+    title: '电脑出售服务',
+    noCache: true
+  }
+},
+ {
+  path: '/computer-market/Build',
+  name: 'ComputerBuild',
+  // 修正路径：添加 shop/ 层级，匹配实际文件位置
+  component: () => import('@/views/computerMarket/shop/Build.vue'), 
+  hidden: true,
+  meta: {
+    title: '电脑装机服务',
+    noCache: true
+  }
+},
+{
+  path: '/user',
+  component: Layout,
+  hidden: true,
+  redirect: 'noredirect',
+  children: [
+    {
+      path: 'profile',
+      component: () => import('@/views/system/user/profile/index'),
+      name: 'Profile',
+      meta: { title: '个人中心', icon: 'user' }
+    }
+  ]
+},
+// C端portal路由配置
+{
+  path: '/portal',
+  component: () => import('@/layout/FrontLayout.vue'),
+  hidden: true,
+  redirect: '/portal/home',
+  children: [
+    {
+      path: 'home',
+      component: () => import('@/views/portal/home.vue'),
+      name: 'PortalHome',
+      meta: {
+        title: '前台首页',
+        noAuth: true,
+        noCache: true
+      }
+    },
+    {
+      path: 'login',
+      component: () => import('@/views/portal/login.vue'),
+      name: 'PortalLogin',
+      meta: {
+        title: 'C端登录',
+        noAuth: true,
+        noCache: true
+      }
+    },
+    {
+      path: 'register',
+      component: () => import('@/views/portal/register.vue'),
+      name: 'PortalRegister',
+      meta: {
+        title: 'C端注册',
+        noAuth: true,
+        noCache: true
+      }
+    }
+  ]
+},
+// 地址管理页面路由
+{
+  path: '/portal/user/address',
+  name: 'UserAddress',
+  component: () => import('@/views/portal/user/address.vue'),
+  hidden: true,
+  meta: {
+    title: '地址管理',
+    noCache: true
+  }
+},
+{
+  path: '/computer-market/product-detail/:id',
+  name: 'ProductDetail',
+  component: () => import('@/views/computerMarket/shop/detail.vue'),
+  hidden: true,
+  meta: {
+    title: '商品详情',
+    noCache: true
+  }
+},
+// 订单结算页面路由
+{
+  path: '/computer-market/checkout',
+  name: 'Checkout',
+  component: () => import('@/views/portal/trade/checkout.vue'),
+  hidden: true,
+  meta: {
+    title: '订单结算',
+    noCache: true
+  }
+}
 ]
 
-// 动态路由，基于用户权限动态去加载
+// 动态路由（基于权限加载）
 export const dynamicRoutes = [
   {
     path: '/system/user-auth',
@@ -164,20 +280,16 @@ export const dynamicRoutes = [
   }
 ]
 
-// 防止连续点击多次路由报错
-let routerPush = Router.prototype.push
-let routerReplace = Router.prototype.replace
-// push
-Router.prototype.push = function push(location) {
-  return routerPush.call(this, location).catch(err => err)
-}
-// replace
-Router.prototype.replace = function push(location) {
-  return routerReplace.call(this, location).catch(err => err)
-}
+const router = createRouter({
+  history: createWebHistory(),
+  routes: constantRoutes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
+    }
+  },
+});
 
-export default new Router({
-  mode: 'history', // 去掉url中的#
-  scrollBehavior: () => ({ y: 0 }),
-  routes: constantRoutes
-})
+export default router;
