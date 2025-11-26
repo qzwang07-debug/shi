@@ -17,7 +17,9 @@ import com.zNova.system.service.IAppAddressService;
 import com.zNova.system.service.IBizProductService;
 import com.zNova.system.service.IShopCartService;
 import com.zNova.system.service.IShopOrderService;
-
+import com.zNova.common.core.page.TableDataInfo;
+import com.zNova.system.domain.ShopOrder;
+import com.zNova.system.domain.ShopOrderItem;
 /**
  * C端订单管理Controller
  * * @author zNova
@@ -46,14 +48,17 @@ public class AppOrderController extends BaseController
     public AjaxResult create(@RequestBody OrderCreateBody orderBody)
     {
         Long userId = SecurityUtils.getUserId();
+        logger.info("用户 {} 开始创建订单", userId);
 
         // 1. 校验地址信息
         AppAddress address = appAddressService.selectAppAddressByAddressId(orderBody.getAddressId());
         if (address == null || !address.getUserId().equals(userId)) {
+            logger.warn("用户 {} 使用无效地址 {} 创建订单", userId, orderBody.getAddressId());
             return error("收货地址不存在或无效");
         }
 
         if (orderBody.getItems() == null || orderBody.getItems().isEmpty()) {
+            logger.warn("用户 {} 创建订单时商品列表为空", userId);
             return error("订单商品不能为空");
         }
 
@@ -66,15 +71,20 @@ public class AppOrderController extends BaseController
         for (CartItemRequest itemReq : orderBody.getItems()) {
             BizProduct product = productService.selectBizProductById(itemReq.getProductId());
             if (product == null) {
+                logger.error("用户 {} 创建订单时商品已下架: ID {}", userId, itemReq.getProductId());
                 throw new RuntimeException("商品已下架: ID " + itemReq.getProductId());
             }
 
             // 校验库存
             if (itemReq.getQuantity() > product.getStockQuantity()) {
+                logger.warn("用户 {} 创建订单时商品 [{}] 库存不足，需求: {}, 实际: {}",
+                        userId, product.getProductName(), itemReq.getQuantity(), product.getStockQuantity());
                 throw new RuntimeException("商品 [" + product.getProductName() + "] 库存不足");
             }
             // 租赁模式下的额外库存校验
             if ("1".equals(itemReq.getBusinessType()) && itemReq.getQuantity() > product.getAvailableRent()) {
+                logger.warn("用户 {} 创建订单时商品 [{}] 可租赁数量不足，需求: {}, 实际: {}",
+                        userId, product.getProductName(), itemReq.getQuantity(), product.getAvailableRent());
                 throw new RuntimeException("商品 [" + product.getProductName() + "] 可租赁数量不足");
             }
 
@@ -92,6 +102,7 @@ public class AppOrderController extends BaseController
             if ("1".equals(itemReq.getBusinessType())) {
                 // 租赁模式
                 if (itemReq.getStartDate() == null || itemReq.getEndDate() == null) {
+                    logger.warn("用户 {} 创建租赁订单时未选择起止时间，商品ID: {}", userId, itemReq.getProductId());
                     throw new RuntimeException("租赁商品必须选择起止时间");
                 }
                 unitPrice = product.getRentPrice();
@@ -161,17 +172,116 @@ public class AppOrderController extends BaseController
             // 保存订单主表（Service中会自动处理关联的Item插入）
             shopOrderService.insertShopOrder(order);
             orderNos.add(order.getOrderNo());
+            logger.info("用户 {} 创建子订单成功，订单号: {}, 商家ID: {}, 金额: {}",
+                    userId, order.getOrderNo(), merchantId, orderTotal);
         }
 
         // 4. 清理购物车
         if (!cartIdsToDelete.isEmpty()) {
             shopCartService.deleteShopCartByIds(cartIdsToDelete.toArray(new Long[0]));
+            logger.info("用户 {} 创建订单后清理购物车，删除 {} 条记录", userId, cartIdsToDelete.size());
         }
+
+        logger.info("用户 {} 订单创建成功，共生成 {} 个订单: {}", userId, orderNos.size(), orderNos);
 
         // --- 修复点：调用 AjaxResult 的静态方法，而不是 BaseController 的实例方法 ---
         return AjaxResult.success("订单创建成功", orderNos);
     }
+    /**
+     * 查询我的订单列表
+     */
+    @GetMapping("/list")
+    public TableDataInfo list(ShopOrder shopOrder)
+    {
+        startPage();
+        shopOrder.setUserId(SecurityUtils.getUserId());
+        // 默认按创建时间倒序
+        List<ShopOrder> list = shopOrderService.selectShopOrderList(shopOrder);
 
+        // 补全订单明细信息 (用于前端显示商品图片等)
+        if (list != null && !list.isEmpty()) {
+            for (ShopOrder order : list) {
+                // 利用已有的大Mapper方法查出关联的 Items
+                ShopOrder fullOrder = shopOrderService.selectShopOrderByOrderId(order.getOrderId());
+                if (fullOrder != null) {
+                    order.setShopOrderItemList(fullOrder.getShopOrderItemList());
+                }
+            }
+        }
+        return getDataTable(list);
+    }
+
+    /**
+     * 模拟支付接口
+     */
+    @PutMapping("/pay/{orderNo}")
+    public AjaxResult pay(@PathVariable String orderNo)
+    {
+        Long userId = SecurityUtils.getUserId();
+        logger.info("用户 {} 开始支付订单 {}", userId, orderNo);
+
+        // 1. 查询订单
+        ShopOrder query = new ShopOrder();
+        query.setOrderNo(orderNo);
+        query.setUserId(userId);
+        List<ShopOrder> list = shopOrderService.selectShopOrderList(query);
+
+        if (list == null || list.isEmpty()) {
+            logger.warn("用户 {} 支付订单失败：订单 {} 不存在或无权操作", userId, orderNo);
+            return error("订单不存在或无权操作");
+        }
+        ShopOrder order = list.get(0);
+
+        // 2. 校验状态 (仅待支付0可支付)
+        if (!"0".equals(order.getStatus())) {
+            logger.warn("用户 {} 支付订单失败：订单 {} 当前状态为 {}，不可支付", userId, orderNo, order.getStatus());
+            return error("订单状态不可支付");
+        }
+
+        // 3. 更新状态 -> 1 (待发货)
+        order.setStatus("1");
+        order.setPayType("1"); // 默认模拟微信
+        order.setPayTime(new Date());
+
+        shopOrderService.updateShopOrder(order);
+        logger.info("用户 {} 支付订单 {} 成功，订单状态更新为待发货", userId, orderNo);
+
+        return success();
+    }
+
+    /**
+     * 确认收货/归还
+     */
+    @PutMapping("/confirm/{orderNo}")
+    public AjaxResult confirm(@PathVariable String orderNo)
+    {
+        Long userId = SecurityUtils.getUserId();
+        logger.info("用户 {} 开始确认收货/归还订单 {}", userId, orderNo);
+
+        ShopOrder query = new ShopOrder();
+        query.setOrderNo(orderNo);
+        query.setUserId(userId);
+        List<ShopOrder> list = shopOrderService.selectShopOrderList(query);
+
+        if (list == null || list.isEmpty()) {
+            logger.warn("用户 {} 确认订单失败：订单 {} 不存在", userId, orderNo);
+            return error("订单不存在");
+        }
+        ShopOrder order = list.get(0);
+
+        // 校验：只有已发货/租赁中(2) 才能确认完成
+        // (模拟演示时，如果想方便测试，可以允许状态1也直接完成，这里写标准逻辑)
+        if (!"2".equals(order.getStatus()) && !"1".equals(order.getStatus())) {
+            logger.warn("用户 {} 确认订单失败：订单 {} 当前状态为 {}，无法确认收货", userId, orderNo, order.getStatus());
+            return error("当前状态无法确认收货");
+        }
+
+        order.setStatus("3"); // 已完成
+        shopOrderService.updateShopOrder(order);
+        logger.info("用户 {} 确认订单 {} 成功，订单状态更新为已完成", userId, orderNo);
+
+        return success();
+    }
     // ================= 内部 DTO 类 =================
 
     /** 订单创建请求体 */
@@ -210,4 +320,5 @@ public class AppOrderController extends BaseController
         public Date getEndDate() { return endDate; }
         public void setEndDate(Date endDate) { this.endDate = endDate; }
     }
+
 }

@@ -75,7 +75,7 @@ import { getCodeImg } from "@/api/login";
 import { appLogin } from "@/api/appLogin";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from '@/utils/jsencrypt'
-import { setToken } from "@/utils/auth";
+import { setToken } from "@/utils/auth"; 
 
 export default {
   name: "PortalLogin",

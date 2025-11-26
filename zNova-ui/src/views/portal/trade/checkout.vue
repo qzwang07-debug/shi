@@ -349,9 +349,18 @@ const submitOrder = async () => {
   try {
     const res = await createOrder(payload);
     ElMessage.success("订单提交成功！");
-    // 跳转到支付或订单列表页，这里假设跳回首页或订单中心
-    // 可以带上 res.data (orderNos)
-    router.push('/portal/user/order'); // 假设有订单列表页
+    // 跳转到支付页，传递订单号和金额
+    // 后端返回的是订单号数组，取第一个订单号
+    const orderNo = res.data?.[0] || res.data?.orderNo || res.orderNo;
+    const totalAmount = finalTotalPrice.value;
+    
+    router.push({
+      path: '/portal/trade/pay',
+      query: {
+        orderNo: orderNo,
+        amount: totalAmount
+      }
+    });
   } catch (error) {
     console.error("Order creation failed", error);
     if (error && error.toString().includes('认证失败')) {

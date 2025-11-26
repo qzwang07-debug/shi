@@ -203,6 +203,28 @@ component: () => import('@/views/computerMarket/cart/index.vue'),
     title: '订单结算',
     noCache: true
   }
+},
+// 支付页面路由
+{
+  path: '/portal/trade/pay',
+  name: 'Pay',
+  component: () => import('@/views/portal/trade/pay.vue'),
+  hidden: true,
+  meta: {
+    title: '订单支付',
+    noCache: true
+  }
+},
+// 订单列表页面路由
+{
+  path: '/portal/user/order',
+  name: 'UserOrder',
+  component: () => import('@/views/portal/user/order.vue'),
+  hidden: true,
+  meta: {
+    title: '我的订单',
+    noCache: true
+  }
 }
 ]
 
