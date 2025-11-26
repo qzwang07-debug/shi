@@ -14,19 +14,19 @@ import com.zNova.system.service.IShopOrderService;
 
 /**
  * 订单主Service业务层处理
- * 
+ *
  * @author wyz
  * @date 2025-11-24
  */
 @Service
-public class ShopOrderServiceImpl implements IShopOrderService 
+public class ShopOrderServiceImpl implements IShopOrderService
 {
     @Autowired
     private ShopOrderMapper shopOrderMapper;
 
     /**
      * 查询订单主
-     * 
+     *
      * @param orderId 订单主主键
      * @return 订单主
      */
@@ -38,7 +38,7 @@ public class ShopOrderServiceImpl implements IShopOrderService
 
     /**
      * 查询订单主列表
-     * 
+     *
      * @param shopOrder 订单主
      * @return 订单主
      */
@@ -50,7 +50,7 @@ public class ShopOrderServiceImpl implements IShopOrderService
 
     /**
      * 新增订单主
-     * 
+     *
      * @param shopOrder 订单主
      * @return 结果
      */
@@ -66,7 +66,7 @@ public class ShopOrderServiceImpl implements IShopOrderService
 
     /**
      * 修改订单主
-     * 
+     *
      * @param shopOrder 订单主
      * @return 结果
      */
@@ -75,14 +75,15 @@ public class ShopOrderServiceImpl implements IShopOrderService
     public int updateShopOrder(ShopOrder shopOrder)
     {
         shopOrder.setUpdateTime(DateUtils.getNowDate());
-        shopOrderMapper.deleteShopOrderItemByOrderId(shopOrder.getOrderId());
-        insertShopOrderItem(shopOrder);
+        // 移除这行删除明细的代码！！！
+        // shopOrderMapper.deleteShopOrderItemByOrderId(shopOrder.getOrderId());
+        // 也移除insertShopOrderItem(shopOrder);——更新订单时不需要重新插入明细
         return shopOrderMapper.updateShopOrder(shopOrder);
     }
 
     /**
      * 批量删除订单主
-     * 
+     *
      * @param orderIds 需要删除的订单主主键
      * @return 结果
      */
@@ -96,7 +97,7 @@ public class ShopOrderServiceImpl implements IShopOrderService
 
     /**
      * 删除订单主信息
-     * 
+     *
      * @param orderId 订单主主键
      * @return 结果
      */
@@ -110,7 +111,7 @@ public class ShopOrderServiceImpl implements IShopOrderService
 
     /**
      * 新增订单明细信息
-     * 
+     *
      * @param shopOrder 订单主对象
      */
     public void insertShopOrderItem(ShopOrder shopOrder)

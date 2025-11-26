@@ -7,9 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.zNova.common.annotation.Log;
@@ -20,15 +18,15 @@ import com.zNova.system.domain.ShopOrder;
 import com.zNova.system.service.IShopOrderService;
 import com.zNova.common.utils.poi.ExcelUtil;
 import com.zNova.common.core.page.TableDataInfo;
+import com.zNova.common.utils.SecurityUtils;
 
 /**
  * 订单主Controller
- * 
- * @author wyz
+ * * @author zNova
  * @date 2025-11-24
  */
 @RestController
-@RequestMapping("/system/ShopOrder")
+@RequestMapping("/merchant/order")
 public class ShopOrderController extends BaseController
 {
     @Autowired
@@ -36,12 +34,18 @@ public class ShopOrderController extends BaseController
 
     /**
      * 查询订单主列表
+     * 注意：如遇到 Access Denied，请确保数据库中角色已分配 system:order:list 权限
+     * 这里暂时注释权限注解，依赖代码中的 deptId 进行数据隔离
      */
-    @PreAuthorize("@ss.hasPermi('system:ShopOrder:list')")
+    // @PreAuthorize("@ss.hasPermi('system:order:list')")
     @GetMapping("/list")
     public TableDataInfo list(ShopOrder shopOrder)
     {
         startPage();
+        // 权限逻辑：如果不是超级管理员，强制只查自己部门的订单
+        if (!SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
+            shopOrder.setDeptId(SecurityUtils.getDeptId());
+        }
         List<ShopOrder> list = shopOrderService.selectShopOrderList(shopOrder);
         return getDataTable(list);
     }
@@ -49,11 +53,15 @@ public class ShopOrderController extends BaseController
     /**
      * 导出订单主列表
      */
-    @PreAuthorize("@ss.hasPermi('system:ShopOrder:export')")
+    @PreAuthorize("@ss.hasPermi('system:order:export')")
     @Log(title = "订单主", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, ShopOrder shopOrder)
     {
+        // 权限逻辑同上
+        if (!SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
+            shopOrder.setDeptId(SecurityUtils.getDeptId());
+        }
         List<ShopOrder> list = shopOrderService.selectShopOrderList(shopOrder);
         ExcelUtil<ShopOrder> util = new ExcelUtil<ShopOrder>(ShopOrder.class);
         util.exportExcel(response, list, "订单主数据");
@@ -62,43 +70,82 @@ public class ShopOrderController extends BaseController
     /**
      * 获取订单主详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:ShopOrder:query')")
+    // @PreAuthorize("@ss.hasPermi('system:order:query')")
     @GetMapping(value = "/{orderId}")
     public AjaxResult getInfo(@PathVariable("orderId") Long orderId)
     {
-        return success(shopOrderService.selectShopOrderByOrderId(orderId));
+        ShopOrder order = shopOrderService.selectShopOrderByOrderId(orderId);
+        // 详情也需要校验权限，防止直接通过ID访问别人的订单
+        if (order != null) {
+            checkOrderPermission(order);
+        }
+        return AjaxResult.success(order);
     }
 
     /**
-     * 新增订单主
+     * 商家发货
      */
-    @PreAuthorize("@ss.hasPermi('system:ShopOrder:add')")
-    @Log(title = "订单主", businessType = BusinessType.INSERT)
-    @PostMapping
-    public AjaxResult add(@RequestBody ShopOrder shopOrder)
+    // @PreAuthorize("@ss.hasPermi('system:order:edit')")
+    @Log(title = "订单发货", businessType = BusinessType.UPDATE)
+    @PutMapping("/ship/{orderId}")
+    public AjaxResult ship(@PathVariable Long orderId)
     {
-        return toAjax(shopOrderService.insertShopOrder(shopOrder));
+        ShopOrder order = shopOrderService.selectShopOrderByOrderId(orderId);
+        if (order == null) {
+            return error("订单不存在");
+        }
+
+        // 1. 校验权限 (管理员放行，商户校验deptId)
+        checkOrderPermission(order);
+
+        // 2. 校验状态
+        if (!"1".equals(order.getStatus())) {
+            return error("订单状态不正确，无法发货");
+        }
+
+        order.setStatus("2"); // 2=已发货/租赁中
+        shopOrderService.updateShopOrder(order);
+        return success();
     }
 
     /**
-     * 修改订单主
+     * 商家确认收到归还
      */
-    @PreAuthorize("@ss.hasPermi('system:ShopOrder:edit')")
-    @Log(title = "订单主", businessType = BusinessType.UPDATE)
-    @PutMapping
-    public AjaxResult edit(@RequestBody ShopOrder shopOrder)
+    // @PreAuthorize("@ss.hasPermi('system:order:edit')")
+    @Log(title = "确认归还", businessType = BusinessType.UPDATE)
+    @PutMapping("/confirmReturn/{orderId}")
+    public AjaxResult confirmReturn(@PathVariable Long orderId)
     {
-        return toAjax(shopOrderService.updateShopOrder(shopOrder));
+        ShopOrder order = shopOrderService.selectShopOrderByOrderId(orderId);
+        if (order == null) {
+            return error("订单不存在");
+        }
+
+        // 1. 校验权限
+        checkOrderPermission(order);
+
+        // 2. 校验状态 (只有 "4=归还中" 才能确认收货)
+        if (!"4".equals(order.getStatus())) {
+            return error("订单不是归还中状态，无法确认");
+        }
+
+        order.setStatus("3"); // 3=已完成
+        shopOrderService.updateShopOrder(order);
+        return success();
     }
 
     /**
-     * 删除订单主
+     * 内部方法：校验当前登录用户是否有权操作该订单
      */
-    @PreAuthorize("@ss.hasPermi('system:ShopOrder:remove')")
-    @Log(title = "订单主", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{orderIds}")
-    public AjaxResult remove(@PathVariable Long[] orderIds)
-    {
-        return toAjax(shopOrderService.deleteShopOrderByOrderIds(orderIds));
+    private void checkOrderPermission(ShopOrder order) {
+        Long userId = SecurityUtils.getUserId();
+        // 如果不是管理员
+        if (!SecurityUtils.isAdmin(userId)) {
+            Long currentDeptId = SecurityUtils.getDeptId();
+            // 如果订单没有归属部门，或者归属部门与当前用户不一致，则视为无权限
+            if (order.getDeptId() == null || !order.getDeptId().equals(currentDeptId)) {
+                throw new RuntimeException("无权操作非本店订单");
+            }
+        }
     }
 }

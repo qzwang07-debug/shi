@@ -2,6 +2,9 @@ package com.zNova.system.controller;
 
 import java.math.BigDecimal;
 import java.util.*;
+
+import com.zNova.system.domain.*;
+import com.zNova.system.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -9,14 +12,6 @@ import com.zNova.common.core.controller.BaseController;
 import com.zNova.common.core.domain.AjaxResult;
 import com.zNova.common.utils.SecurityUtils;
 import com.zNova.common.utils.uuid.IdUtils;
-import com.zNova.system.domain.AppAddress;
-import com.zNova.system.domain.BizProduct;
-import com.zNova.system.domain.ShopOrder;
-import com.zNova.system.domain.ShopOrderItem;
-import com.zNova.system.service.IAppAddressService;
-import com.zNova.system.service.IBizProductService;
-import com.zNova.system.service.IShopCartService;
-import com.zNova.system.service.IShopOrderService;
 import com.zNova.common.core.page.TableDataInfo;
 import com.zNova.system.domain.ShopOrder;
 import com.zNova.system.domain.ShopOrderItem;
@@ -39,6 +34,7 @@ public class AppOrderController extends BaseController
 
     @Autowired
     private IShopCartService shopCartService;
+
 
     /**
      * 创建订单
@@ -96,6 +92,10 @@ public class AppOrderController extends BaseController
             orderItem.setBusinessType(itemReq.getBusinessType()); // 1租赁 2购买
             orderItem.setQuantity(Long.valueOf(itemReq.getQuantity()));
             orderItem.setDeptId(product.getDeptId()); // 关键：记录该商品的归属商家
+
+            // 【调试日志】验证productId是否正确设置
+            logger.info("创建订单明细 - productId: {}, productName: {}, quantity: {}",
+                    orderItem.getProductId(), orderItem.getProductName(), orderItem.getQuantity());
 
             // 计算价格
             BigDecimal unitPrice;
@@ -195,16 +195,27 @@ public class AppOrderController extends BaseController
     {
         startPage();
         shopOrder.setUserId(SecurityUtils.getUserId());
-        // 默认按创建时间倒序
+        // 1. 查询主订单列表
         List<ShopOrder> list = shopOrderService.selectShopOrderList(shopOrder);
 
-        // 补全订单明细信息 (用于前端显示商品图片等)
+        // 2. 补全订单明细信息 (关键步骤)
         if (list != null && !list.isEmpty()) {
             for (ShopOrder order : list) {
-                // 利用已有的大Mapper方法查出关联的 Items
+                // 调用 selectShopOrderByOrderId 通常会关联查询 Items
                 ShopOrder fullOrder = shopOrderService.selectShopOrderByOrderId(order.getOrderId());
-                if (fullOrder != null) {
+                if (fullOrder != null && fullOrder.getShopOrderItemList() != null) {
                     order.setShopOrderItemList(fullOrder.getShopOrderItemList());
+
+                    // 【调试日志】打印查询到的订单明细信息
+                    logger.info("查询订单列表 - 订单号: {}, 商品明细数量: {}", order.getOrderNo(), fullOrder.getShopOrderItemList().size());
+                    for (ShopOrderItem item : fullOrder.getShopOrderItemList()) {
+                        logger.info("  商品明细 - ID: {}, productId: {}, productName: {}",
+                                item.getId(), item.getProductId(), item.getProductName());
+                    }
+                } else {
+                    // 防止 null 指针，设置空列表
+                    order.setShopOrderItemList(new ArrayList<>());
+                    logger.warn("查询订单列表 - 订单号: {} 未找到商品明细", order.getOrderNo());
                 }
             }
         }
@@ -275,13 +286,47 @@ public class AppOrderController extends BaseController
             logger.warn("用户 {} 确认订单失败：订单 {} 当前状态为 {}，无法确认收货", userId, orderNo, order.getStatus());
             return error("当前状态无法确认收货");
         }
-
+// 修复：保留原有商品明细，防止更新时丢失
+        ShopOrder originalOrder = shopOrderService.selectShopOrderByOrderId(order.getOrderId());
+        if (originalOrder != null && originalOrder.getShopOrderItemList() != null) {
+            order.setShopOrderItemList(originalOrder.getShopOrderItemList());
+            logger.info("用户 {} 确认订单 {} 时保留商品明细 {} 条", userId, orderNo, originalOrder.getShopOrderItemList().size());
+        }
         order.setStatus("3"); // 已完成
         shopOrderService.updateShopOrder(order);
         logger.info("用户 {} 确认订单 {} 成功，订单状态更新为已完成", userId, orderNo);
 
         return success();
     }
+    /**
+     * 申请归还 (租赁业务)
+     * 状态流转: 2(租赁中) -> 4(归还中)
+     */
+    @PutMapping("/return/{orderId}")
+    public AjaxResult returnOrder(@PathVariable Long orderId)
+    {
+        ShopOrder order = shopOrderService.selectShopOrderByOrderId(orderId);
+        if (order == null || !order.getUserId().equals(SecurityUtils.getUserId())) {
+            return error("订单不存在或无权操作");
+        }
+
+        if (!"2".equals(order.getStatus())) {
+            return error("当前状态无法申请归还");
+        }
+
+        // 简单校验是否包含租赁商品 (实际业务可能更复杂)
+        boolean hasRental = order.getShopOrderItemList().stream()
+                .anyMatch(item -> "1".equals(item.getBusinessType()));
+
+        if (!hasRental) {
+            return error("非租赁订单，请直接确认收货");
+        }
+
+        order.setStatus("4"); // 4=归还中
+        shopOrderService.updateShopOrder(order);
+        return success();
+    }
+
     // ================= 内部 DTO 类 =================
 
     /** 订单创建请求体 */

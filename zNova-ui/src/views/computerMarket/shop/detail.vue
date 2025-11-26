@@ -124,6 +124,18 @@
               </div>
             </div>
             
+            <!-- 评分概览 -->
+            <div class="meta-item">
+              <span class="label">评分</span>
+              <el-rate
+                v-model="averageRating"
+                disabled
+                show-score
+                text-color="#ff9900"
+                score-template="{value}"
+              />
+            </div>
+
             <div class="service-tags">
               <span class="tag"><el-icon><CircleCheck /></el-icon> 正品保障</span>
               <span class="tag"><el-icon><Van /></el-icon> 极速发货</span>
@@ -132,8 +144,10 @@
           </div>
         </div>
 
+        <!-- 商品标签页区域 -->
         <div class="product-tabs-section">
-          <el-tabs v-model="activeTab" class="custom-tabs">
+          <el-tabs v-model="activeTab" class="custom-tabs" @tab-change="handleTabChange">
+            <!-- 商品详情标签 -->
             <el-tab-pane label="商品详情" name="detail">
               <div class="rich-text-content" v-if="product.detail">
                 <div v-html="product.detail"></div>
@@ -143,6 +157,7 @@
               </div>
             </el-tab-pane>
             
+            <!-- 配置清单标签 -->
             <el-tab-pane label="配置清单" name="config">
               <el-descriptions :column="1" border>
                 <el-descriptions-item label="CPU">{{ product.cpu }}</el-descriptions-item>
@@ -152,15 +167,51 @@
                 <el-descriptions-item label="主板">{{ product.mainboard || '标准配置' }}</el-descriptions-item>
               </el-descriptions>
             </el-tab-pane>
+            
+            <!-- 商品评价标签 -->
+            <el-tab-pane :label="`商品评价 (${commentTotal})`" name="reviews">
+              <div class="reviews-container" v-loading="commentLoading">
+                <div v-if="commentList.length > 0">
+                  <div v-for="item in commentList" :key="item.id" class="review-item">
+                    <div class="review-header">
+                      <div class="user-info">
+                        <el-avatar :size="32" :src="defaultAvatar" class="user-avatar">
+                          {{ item.userName ? item.userName.charAt(0).toUpperCase() : 'U' }}
+                        </el-avatar>
+                        <span class="user-name">{{ item.userName || '匿名用户' }}</span>
+                      </div>
+                      <div class="review-meta">
+                        <span class="review-date">{{ formatDate(item.createTime) }}</span>
+                      </div>
+                    </div>
+                    <div class="review-rating">
+                      <el-rate v-model="item.star" disabled text-color="#ff9900" />
+                    </div>
+                    <div class="review-content">
+                      {{ item.content }}
+                    </div>
+                  </div>
+                  
+                  <!-- 评价分页 -->
+                  <div class="pagination-box">
+                    <el-pagination
+                      v-show="commentTotal > 0"
+                      :total="commentTotal"
+                      v-model:current-page="commentParams.pageNum"
+                      v-model:page-size="commentParams.pageSize"
+                      layout="prev, pager, next"
+                      @current-change="getCommentList"
+                    />
+                  </div>
+                </div>
+                <el-empty v-else description="暂无评价，快来抢沙发吧！" :image-size="80" />
+              </div>
+            </el-tab-pane>
           </el-tabs>
         </div>
       </div>
-
-      <div v-else-if="!loading" class="not-found">
-        <el-empty description="商品不存在或已下架">
-          <el-button type="primary" @click="$router.push('/computer-market')">返回列表</el-button>
-        </el-empty>
-      </div>
+      
+      <el-empty v-else description="商品不存在" :image-size="100" />
     </div>
     
     <el-footer class="simple-footer">
@@ -174,13 +225,14 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getFrontProduct } from "@/api/front/product";
 import { addToCart as addToCartAPI } from '@/api/shop/cart';
+import { listFrontComment } from '@/api/front/comment';
 import { ElMessage } from 'element-plus';
 import {
   ZoomIn, QuestionFilled, CircleCheckFilled, CircleCloseFilled,
   ShoppingCart, CircleCheck, Van, Refresh
 } from '@element-plus/icons-vue';
-import Header from '../Header.vue'; 
-// import defaultImg from '@/assets/images/default-product.jpg'; 
+import Header from '../Header.vue';
+// import defaultImg from '@/assets/images/default-product.jpg';
 
 const route = useRoute();
 const router = useRouter();
@@ -190,6 +242,16 @@ const loading = ref(true);
 const product = ref(null);
 const quantity = ref(1);
 const activeTab = ref('detail');
+const commentLoading = ref(false);
+const commentList = ref([]);
+const commentTotal = ref(0);
+const averageRating = ref(0);
+const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png';
+const commentParams = ref({
+  pageNum: 1,
+  pageSize: 10,
+  productId: null
+});
 // const defaultImage = defaultImg;
 
 // 1. 判断是否租赁 (严格模式：只认 '1')
@@ -271,6 +333,52 @@ const buyNow = () => {
   addToCart();
   // 建议跳转到购物车页，或者直接跳结算页
   router.push('/computer-market/cart'); 
+};
+
+// 获取评价列表
+const getCommentList = async () => {
+  if (!product.value) return;
+  
+  try {
+    commentLoading.value = true;
+    commentParams.value.productId = product.value.id;
+    const response = await listFrontComment(commentParams.value);
+    
+    if (response.rows) {
+      commentList.value = response.rows;
+      commentTotal.value = response.total;
+      
+      // 计算平均评分
+      if (commentList.value.length > 0) {
+        const totalStars = commentList.value.reduce((sum, item) => sum + (item.star || 0), 0);
+        averageRating.value = (totalStars / commentList.value.length).toFixed(1);
+      } else {
+        averageRating.value = 0;
+      }
+    }
+  } catch (error) {
+    console.error('获取评价列表失败:', error);
+    ElMessage.error('获取评价列表失败');
+  } finally {
+    commentLoading.value = false;
+  }
+};
+
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// 监听标签页切换
+const handleTabChange = (tab) => {
+  if (tab === 'reviews' && product.value) {
+    getCommentList();
+  }
 };
 
 onMounted(() => {
@@ -553,6 +661,78 @@ onMounted(() => {
   font-size: 14px;
   padding: 20px 0;
   margin-top: auto;
+}
+
+/* 评价样式 */
+.reviews-container {
+  padding: 20px 0;
+}
+
+.review-item {
+  padding: 20px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  background-color: #3b82f6;
+}
+
+.user-name {
+  font-size: 14px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.review-meta {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.review-rating {
+  margin-bottom: 12px;
+}
+
+.review-content {
+  font-size: 15px;
+  color: #334155;
+  line-height: 1.6;
+  padding-left: 44px;
+}
+
+.pagination-box {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  padding: 20px 0;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.meta-item .label {
+  font-size: 14px;
+  color: #64748b;
 }
 
 /* 响应式 */

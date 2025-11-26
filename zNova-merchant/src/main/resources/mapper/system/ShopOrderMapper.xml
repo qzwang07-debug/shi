@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.zNova.system.mapper.ShopOrderMapper">
-    
+
     <resultMap type="ShopOrder" id="ShopOrderResult">
         <result property="orderId"    column="order_id"    />
         <result property="orderNo"    column="order_no"    />
@@ -46,7 +46,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectShopOrderList" parameterType="ShopOrder" resultMap="ShopOrderResult">
         <include refid="selectShopOrderVo"/>
-        <where>  
+        <where>
             <if test="orderNo != null  and orderNo != ''"> and order_no = #{orderNo}</if>
             <if test="userId != null "> and user_id = #{userId}</if>
             <if test="totalAmount != null "> and total_amount = #{totalAmount}</if>
@@ -59,7 +59,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="deptId != null "> and dept_id = #{deptId}</if>
         </where>
     </select>
-    
+
     <select id="selectShopOrderByOrderId" parameterType="Long" resultMap="ShopOrderShopOrderItemResult">
         select order_id, order_no, user_id, total_amount, status, pay_type, pay_time, receiver_name, receiver_phone, receiver_address, remark, create_time, update_time, dept_id
         from shop_order
@@ -73,6 +73,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <insert id="insertShopOrder" parameterType="ShopOrder" useGeneratedKeys="true" keyProperty="orderId">
+        <!-- 新增 selectKey 确保能获取到自增主键 -->
+        <selectKey keyProperty="orderId" resultType="long" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
         insert into shop_order
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="orderNo != null and orderNo != ''">order_no,</if>
@@ -88,7 +92,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">create_time,</if>
             <if test="updateTime != null">update_time,</if>
             <if test="deptId != null">dept_id,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="orderNo != null and orderNo != ''">#{orderNo},</if>
             <if test="userId != null">#{userId},</if>
@@ -103,7 +107,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">#{createTime},</if>
             <if test="updateTime != null">#{updateTime},</if>
             <if test="deptId != null">#{deptId},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateShopOrder" parameterType="ShopOrder">
@@ -131,14 +135,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteShopOrderByOrderIds" parameterType="String">
-        delete from shop_order where order_id in 
+        delete from shop_order where order_id in
         <foreach item="orderId" collection="array" open="(" separator="," close=")">
             #{orderId}
         </foreach>
     </delete>
-    
+
     <delete id="deleteShopOrderItemByOrderIds" parameterType="String">
-        delete from shop_order_item where order_id in 
+        delete from shop_order_item where order_id in
         <foreach item="orderId" collection="array" open="(" separator="," close=")">
             #{orderId}
         </foreach>
@@ -149,9 +153,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <insert id="batchShopOrderItem">
-        insert into shop_order_item( id, order_id, product_id, product_name, product_img, business_type, price, quantity, rent_start_time, rent_end_time, rent_days, dept_id) values
+        insert into shop_order_item( order_id, product_id, product_name, product_img, business_type, price, quantity, rent_start_time, rent_end_time, rent_days, dept_id) values
         <foreach item="item" index="index" collection="list" separator=",">
-            ( #{item.id}, #{item.orderId}, #{item.productId}, #{item.productName}, #{item.productImg}, #{item.businessType}, #{item.price}, #{item.quantity}, #{item.rentStartTime}, #{item.rentEndTime}, #{item.rentDays}, #{item.deptId})
+            ( #{item.orderId}, #{item.productId}, #{item.productName}, #{item.productImg}, #{item.businessType}, #{item.price}, #{item.quantity}, #{item.rentStartTime}, #{item.rentEndTime}, #{item.rentDays}, #{item.deptId})
         </foreach>
     </insert>
 </mapper>
