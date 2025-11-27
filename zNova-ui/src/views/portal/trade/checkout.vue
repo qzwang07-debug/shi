@@ -1,6 +1,13 @@
 <template>
-  <div class="checkout-container">
-    <div class="main-content">
+  <div class="common-layout">
+    <el-container class="app-container">
+      <!-- 导入的头部导航栏组件 -->
+      <Header />
+      
+      <!-- 主要内容区域 -->
+      <el-main class="main-content">
+        <div class="checkout-container">
+          <div class="content-wrapper">
       <!-- 步骤条 -->
       <el-steps :active="1" finish-status="success" simple class="mb-20">
         <el-step title="我的购物车" icon="ShoppingCart" />
@@ -148,7 +155,11 @@
         <el-button type="primary" @click="confirmAddressSelection">确定</el-button>
       </template>
     </el-dialog>
-  </div>
+        </div>
+      
+    </el-main>
+  </el-container>
+</div>
 </template>
 
 <script setup>
@@ -160,6 +171,7 @@ import { listCart } from "@/api/shop/cart";
 import { listAddress } from "@/api/portal/address";
 import { createOrder } from "@/api/portal/order";
 import { getAppToken } from '@/utils/auth';
+import Header from '@/views/computerMarket/Header.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -378,13 +390,30 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.checkout-container {
-  background-color: #f5f7fa;
+/* 布局样式 */
+.common-layout {
   min-height: 100vh;
-  padding-bottom: 80px; /* 留出底部栏空间 */
+}
+
+.app-container {
+  background-color: #FAFAF8;
+  color: #000000;
+  min-height: 100vh;
 }
 
 .main-content {
+  background-color: #FAFAF8;
+  padding: 0;
+  margin-top: 70px; /* 为固定导航栏留出空间 */
+}
+
+.checkout-container {
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 70px);
+  padding-bottom: 80px; /* 留出底部栏空间 */
+}
+
+.content-wrapper {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;

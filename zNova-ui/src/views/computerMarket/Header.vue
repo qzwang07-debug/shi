@@ -16,8 +16,9 @@
         <div class="nav-item" @click="goToRental">租赁</div>
         <div class="nav-item" @click="goToBuild">装机</div> <!-- 新增装机按钮 -->
         <div class="nav-item" @click="goToCart">购物车</div>
-        <div class="nav-item">商家</div>
-        <div class="nav-item">登录</div>
+        <div class="nav-item" @click="goToMerchant">商家</div>
+        <!-- 登录状态组件 -->
+        <LoginStatus />
       </div>
     </div>
   </el-header>
@@ -25,6 +26,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import LoginStatus from '@/components/LoginStatus.vue';
 
 const router = useRouter();
 
@@ -48,6 +50,10 @@ const goToBuild = () => {
 
 const goToCart = () => {
   router.push('/computer-market/shopping-cart');
+};
+
+const goToMerchant = () => {
+  router.push('/login');
 };
 </script>
 

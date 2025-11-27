@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.HardwareGpuMapper">
+    
+    <resultMap type="HardwareGpu" id="HardwareGpuResult">
+        <result property="id"    column="id"    />
+        <result property="brand"    column="brand"    />
+        <result property="model"    column="model"    />
+        <result property="performanceScore"    column="performance_score"    />
+        <result property="tdp"    column="tdp"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectHardwareGpuVo">
+        select id, brand, model, performance_score, tdp, create_time, update_time from hardware_gpu
+    </sql>
+
+    <select id="selectHardwareGpuList" parameterType="HardwareGpu" resultMap="HardwareGpuResult">
+        <include refid="selectHardwareGpuVo"/>
+        <where>  
+            <if test="brand != null  and brand != ''"> and brand = #{brand}</if>
+            <if test="model != null  and model != ''"> and model like concat('%', #{model}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectHardwareGpuById" parameterType="Long" resultMap="HardwareGpuResult">
+        <include refid="selectHardwareGpuVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectHardwareGpuByModel" parameterType="String" resultType="HardwareGpu">
+        select * from hardware_gpu where model = #{model}
+    </select>
+
+    <insert id="insertHardwareGpu" parameterType="HardwareGpu" useGeneratedKeys="true" keyProperty="id">
+        insert into hardware_gpu
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="brand != null and brand != ''">brand,</if>
+            <if test="model != null and model != ''">model,</if>
+            <if test="performanceScore != null">performance_score,</if>
+            <if test="tdp != null">tdp,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="brand != null and brand != ''">#{brand},</if>
+            <if test="model != null and model != ''">#{model},</if>
+            <if test="performanceScore != null">#{performanceScore},</if>
+            <if test="tdp != null">#{tdp},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateHardwareGpu" parameterType="HardwareGpu">
+        update hardware_gpu
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="brand != null and brand != ''">brand = #{brand},</if>
+            <if test="model != null and model != ''">model = #{model},</if>
+            <if test="performanceScore != null">performance_score = #{performanceScore},</if>
+            <if test="tdp != null">tdp = #{tdp},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteHardwareGpuById" parameterType="Long">
+        delete from hardware_gpu where id = #{id}
+    </delete>
+
+    <delete id="deleteHardwareGpuByIds" parameterType="String">
+        delete from hardware_gpu where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

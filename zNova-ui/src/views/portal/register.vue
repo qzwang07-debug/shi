@@ -1,8 +1,39 @@
 <template>
-  <div class="portal-register">
-    <div class="register-container">
-      <h2 class="register-title">C端用户注册</h2>
+  <div class="common-layout">
+    <el-container class="app-container">
+      <!-- 导入的头部导航栏组件 -->
+      <Header />
+      
+      <!-- 主要内容区域 -->
+      <el-main class="main-content">
+        <div class="portal-register">
+          <div class="register-container">
+            <h2 class="register-title">C端用户注册</h2>
       <el-form ref="registerForm" :model="registerForm" :rules="registerRules" class="register-form">
+        <!-- 头像上传区域 -->
+        <el-form-item>
+          <div class="avatar-upload-section">
+            <h3 class="avatar-title">上传头像</h3>
+            <el-upload
+              class="avatar-uploader"
+              :action="uploadUrl"
+              :headers="uploadHeaders"
+              :show-file-list="false"
+              :on-success="handleAvatarSuccess"
+              :before-upload="beforeAvatarUpload"
+              :auto-upload="true"
+              drag
+            >
+              <img v-if="registerForm.avatar" :src="registerForm.avatar" class="avatar" />
+              <template v-else>
+                <el-icon class="avatar-uploader-icon"><Plus /></el-icon>
+                <div class="avatar-hint">点击或拖拽文件到此处上传</div>
+                <div class="avatar-tip">支持 JPG、PNG 格式，不超过 2MB</div>
+              </template>
+            </el-upload>
+          </div>
+        </el-form-item>
+        
         <el-form-item prop="username">
           <el-input
             v-model="registerForm.username"
@@ -87,17 +118,26 @@
           </div>
         </el-form-item>
       </el-form>
-    </div>
+          </div>
+        </div>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
 <script>
 import { getCodeImg } from "@/api/login";
 import { appRegister } from "@/api/appLogin";
+import { Plus } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import Header from '@/views/computerMarket/Header.vue';
 
 export default {
   name: "PortalRegister",
+  components: {
+    Plus,
+    Header
+  },
   data() {
     const equalToPassword = (rule, value, callback) => {
       if (this.registerForm.password !== value) {
@@ -108,11 +148,15 @@ export default {
     };
     return {
       codeUrl: "",
+      // 头像上传配置
+      uploadUrl: '/app/user/avatar', // 头像上传接口地址
+      uploadHeaders: {}, // 上传请求头
       registerForm: {
         username: "",
         password: "",
         confirmPassword: "",
         nickname: "",
+        avatar: "", // 头像字段
         code: "",
         uuid: ""
       },
@@ -152,6 +196,31 @@ export default {
         }
       });
     },
+    
+    // 头像上传成功处理
+    handleAvatarSuccess(response) {
+      if (response.code === 200) {
+        this.registerForm.avatar = response.data.avatar;
+        ElMessage.success('头像上传成功');
+      } else {
+        ElMessage.error('头像上传失败');
+      }
+    },
+    
+    // 头像上传前验证
+    beforeAvatarUpload(file) {
+      const isJPG = file.type === 'image/jpeg' || file.type === 'image/png';
+      const isLt2M = file.size / 1024 / 1024 < 2;
+
+      if (!isJPG) {
+        ElMessage.error('上传头像图片只能是 JPG/PNG 格式!');
+      }
+      if (!isLt2M) {
+        ElMessage.error('上传头像图片大小不能超过 2MB!');
+      }
+      return isJPG && isLt2M;
+    },
+    
     handleRegister() {
       this.$refs.registerForm.validate(valid => {
         if (valid) {
@@ -160,6 +229,7 @@ export default {
             username: this.registerForm.username,
             password: this.registerForm.password,
             nickname: this.registerForm.nickname,
+            avatar: this.registerForm.avatar, // 传递头像信息
             code: this.registerForm.code,
             uuid: this.registerForm.uuid
           }).then(res => {
@@ -188,13 +258,37 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+/* 布局样式 */
+.common-layout {
+  min-height: 100vh;
+}
+
+.app-container {
+  background-color: #FAFAF8;
+  color: #000000;
+  min-height: 100vh;
+}
+
+.main-content {
+  background-color: #FAFAF8;
+  padding: 20px;
+  margin-top: 70px; /* 为固定导航栏留出空间 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .portal-register {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-image: url("../assets/images/login-background.jpg");
   background-size: cover;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .register-container {
   width: 400px;
@@ -208,6 +302,66 @@ export default {
   text-align: center;
   color: #707070;
 }
+
+/* 头像上传区域样式 */
+.avatar-upload-section {
+  margin-bottom: 20px;
+}
+
+.avatar-title {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  text-align: center;
+}
+
+.avatar-uploader {
+  border: 1px dashed #d9d9d9;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+  background-color: #fafafa;
+}
+
+.avatar-uploader:hover {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.avatar-uploader-icon {
+  font-size: 32px;
+  color: #8c939d;
+  margin-bottom: 10px;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-hint {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 5px;
+}
+
+.avatar-tip {
+  font-size: 12px;
+  color: #909399;
+}
+
 .register-form {
   .el-input {
     height: 38px;

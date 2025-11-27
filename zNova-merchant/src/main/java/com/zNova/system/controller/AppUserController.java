@@ -1,15 +1,22 @@
 package com.zNova.system.controller;
 
+import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.zNova.common.config.RuoYiConfig;
 import com.zNova.common.core.domain.entity.AppUser;
+import com.zNova.common.utils.file.FileUploadUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.zNova.common.core.domain.AjaxResult;
 import com.zNova.common.core.domain.model.AppLoginUser;
@@ -94,13 +101,138 @@ public class AppUserController
         Object userObj = loginUser.getUser();
         if (userObj instanceof AppUser) {
             AppUser user = (AppUser) userObj;
+
+            // 设置默认值
+            if (user.getCreditScore() == null) {
+                user.setCreditScore(700);
+            }
+            if (user.getBalance() == null) {
+                user.setBalance(BigDecimal.ZERO);
+            }
+
             AjaxResult ajax = AjaxResult.success();
             ajax.put("user", user);
             ajax.put("userId", user.getUserId());
             ajax.put("username", user.getUsername());
             ajax.put("nickname", user.getNickname());
             ajax.put("avatar", user.getAvatar());
+            ajax.put("creditScore", user.getCreditScore());
+            ajax.put("balance", user.getBalance());
             return ajax;
+        }
+
+        return AjaxResult.error("用户信息解析失败");
+    }
+
+    /**
+     * 修改个人信息
+     */
+    @PutMapping("/user/profile")
+    public AjaxResult updateProfile(@RequestBody AppUser appUser, HttpServletRequest request)
+    {
+        AppLoginUser loginUser = appTokenService.getLoginUser(request);
+        if (loginUser == null)
+        {
+            return AjaxResult.error("未登录或token已过期");
+        }
+
+        Object userObj = loginUser.getUser();
+        if (userObj instanceof AppUser) {
+            AppUser user = (AppUser) userObj;
+
+            // 只允许修改昵称、性别、手机号
+            user.setNickname(appUser.getNickname());
+            user.setSex(appUser.getSex());
+            user.setPhonenumber(appUser.getPhonenumber());
+
+            int result = appUserService.updateAppUser(user);
+            if (result > 0) {
+                // 更新登录用户信息
+                loginUser.setUser(user);
+                appTokenService.setLoginUser(loginUser);
+                return AjaxResult.success("修改成功");
+            }
+            return AjaxResult.error("修改失败");
+        }
+
+        return AjaxResult.error("用户信息解析失败");
+    }
+
+    /**
+     * 修改密码
+     */
+    @PutMapping("/user/pwd")
+    public AjaxResult updatePassword(@RequestBody Map<String, String> params, HttpServletRequest request)
+    {
+        AppLoginUser loginUser = appTokenService.getLoginUser(request);
+        if (loginUser == null)
+        {
+            return AjaxResult.error("未登录或token已过期");
+        }
+
+        Object userObj = loginUser.getUser();
+        if (userObj instanceof AppUser) {
+            AppUser user = (AppUser) userObj;
+
+            String oldPassword = params.get("oldPassword");
+            String newPassword = params.get("newPassword");
+
+            // 校验旧密码
+            if (!bCryptPasswordEncoder.matches(oldPassword, user.getPassword())) {
+                return AjaxResult.error("旧密码错误");
+            }
+
+            // 更新新密码
+            user.setPassword(bCryptPasswordEncoder.encode(newPassword));
+            int result = appUserService.updateAppUser(user);
+            if (result > 0) {
+                // 更新登录用户信息
+                loginUser.setUser(user);
+                appTokenService.setLoginUser(loginUser);
+                return AjaxResult.success("密码修改成功");
+            }
+            return AjaxResult.error("密码修改失败");
+        }
+
+        return AjaxResult.error("用户信息解析失败");
+    }
+
+    /**
+     * 头像上传
+     */
+    @PostMapping("/user/avatar")
+    public AjaxResult uploadAvatar(@RequestParam("file") MultipartFile file, HttpServletRequest request)
+    {
+        AppLoginUser loginUser = appTokenService.getLoginUser(request);
+        if (loginUser == null)
+        {
+            return AjaxResult.error("未登录或token已过期");
+        }
+
+        Object userObj = loginUser.getUser();
+        if (userObj instanceof AppUser) {
+            AppUser user = (AppUser) userObj;
+
+            try {
+                // 调用文件上传服务
+                String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file);
+
+                // 更新用户头像
+                user.setAvatar(avatar);
+                int result = appUserService.updateAppUser(user);
+                if (result > 0) {
+                    // 更新登录用户信息
+                    loginUser.setUser(user);
+                    appTokenService.setLoginUser(loginUser);
+
+                    AjaxResult ajax = AjaxResult.success("头像上传成功");
+                    ajax.put("avatar", avatar);
+                    return ajax;
+                }
+                return AjaxResult.error("头像上传失败");
+            } catch (Exception e) {
+                return AjaxResult.error("头像上传失败：" + e.getMessage());
+            }
         }
 
         return AjaxResult.error("用户信息解析失败");

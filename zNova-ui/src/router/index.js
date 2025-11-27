@@ -42,11 +42,6 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: "/:pathMatch(.*)*",
-    component: () => import('@/views/error/404'),
-    hidden: true
-  },
-  {
     path: '/401',
     component: () => import('@/views/error/401'),
     hidden: true
@@ -60,7 +55,11 @@ export const constantRoutes = [
         path: '/index',
         component: () => import('@/views/index'),
         name: 'Index',
-        meta: { title: '首页', icon: 'dashboard', affix: true }
+        meta: {
+          title: '首页',
+          icon: 'dashboard',
+          affix: true
+        }
       }
     ]
   },
@@ -135,42 +134,36 @@ component: () => import('@/views/computerMarket/cart/index.vue'),
 },
 // C端portal路由配置
 {
-  path: '/portal',
-  component: () => import('@/layout/FrontLayout.vue'),
+  path: '/portal/login',
+  component: () => import('@/views/portal/login.vue'),
+  name: 'PortalLogin',
   hidden: true,
-  redirect: '/portal/home',
-  children: [
-    {
-      path: 'home',
-      component: () => import('@/views/portal/home.vue'),
-      name: 'PortalHome',
-      meta: {
-        title: '前台首页',
-        noAuth: true,
-        noCache: true
-      }
-    },
-    {
-      path: 'login',
-      component: () => import('@/views/portal/login.vue'),
-      name: 'PortalLogin',
-      meta: {
-        title: 'C端登录',
-        noAuth: true,
-        noCache: true
-      }
-    },
-    {
-      path: 'register',
-      component: () => import('@/views/portal/register.vue'),
-      name: 'PortalRegister',
-      meta: {
-        title: 'C端注册',
-        noAuth: true,
-        noCache: true
-      }
-    }
-  ]
+  meta: {
+    title: 'C端登录',
+    noAuth: true,
+    noCache: true
+  }
+},
+{
+  path: '/portal/register',
+  component: () => import('@/views/portal/register.vue'),
+  name: 'PortalRegister',
+  hidden: true,
+  meta: {
+    title: 'C端注册',
+    noAuth: true,
+    noCache: true
+  }
+},
+{
+  path: '/portal/user/profile',
+  component: () => import('@/views/portal/user/profile.vue'),
+  name: 'PortalProfile',
+  hidden: true,
+  meta: {
+    title: '个人中心',
+    noCache: true
+  }
 },
 // 地址管理页面路由
 {
@@ -225,7 +218,13 @@ component: () => import('@/views/computerMarket/cart/index.vue'),
     title: '我的订单',
     noCache: true
   }
-}
+},
+  // 404页面必须放在最后
+  {
+    path: "/:pathMatch(.*)*",
+    component: () => import('@/views/error/404'),
+    hidden: true
+  }
 ]
 
 // 动态路由（基于权限加载）

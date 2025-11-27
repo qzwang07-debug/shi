@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.ShopCartMapper">
+
+    <resultMap type="ShopCart" id="ShopCartResult">
+        <result property="cartId"    column="cart_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="productId" column="product_id" />
+        <result property="quantity"  column="quantity"   />
+        <result property="businessType" column="business_type" />
+        <result property="isChecked" column="is_checked" />
+
+        <result property="createBy"   column="create_by"   />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy"   column="update_by"   />
+        <result property="updateTime" column="update_time" />
+        <result property="remark"     column="remark"      />
+
+        <result property="productName" column="product_name" />
+        <result property="productImg"  column="product_img" /> <result property="price"       column="price" />       </resultMap>
+
+    <sql id="selectShopCartVo">
+        SELECT
+            c.cart_id,
+            c.user_id,
+            c.product_id,
+            c.quantity,
+            c.business_type,
+            c.is_checked,
+            c.create_by,
+            c.create_time,
+            c.update_by,
+            c.update_time,
+            c.remark,
+            /* 修正1：从 biz_product 获取商品名称 */
+            p.product_name,
+            /* 修正2：biz_product 中图片字段是 image_url，需要起别名为 product_img 以匹配实体类 */
+            p.image_url AS product_img,
+            /* 修正3：根据业务类型取不同价格 (1=租赁, 2=购买) */
+            CASE
+                WHEN c.business_type = '1' THEN p.rent_price
+                ELSE p.sale_price
+                END AS price
+        FROM shop_cart c
+                 /* 修正4：关联表名改为 biz_product */
+                 LEFT JOIN biz_product p ON c.product_id = p.id
+    </sql>
+
+    <select id="selectCartList" parameterType="Long" resultMap="ShopCartResult">
+        <include refid="selectShopCartVo"/>
+        WHERE c.user_id = #{userId}
+        ORDER BY c.create_time DESC
+    </select>
+
+    <select id="selectCartByProduct" resultMap="ShopCartResult">
+        <include refid="selectShopCartVo"/>
+        WHERE c.user_id = #{userId}
+        AND c.product_id = #{productId}
+        AND c.business_type = #{businessType}
+        LIMIT 1
+    </select>
+
+    <insert id="insertShopCart" parameterType="ShopCart" useGeneratedKeys="true" keyProperty="cartId">
+        INSERT INTO shop_cart
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="productId != null">product_id,</if>
+            <if test="quantity != null">quantity,</if>
+            <if test="businessType != null">business_type,</if>
+            <if test="isChecked != null">is_checked,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="productId != null">#{productId},</if>
+            <if test="quantity != null">#{quantity},</if>
+            <if test="businessType != null">#{businessType},</if>
+            <if test="isChecked != null">#{isChecked},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateShopCart" parameterType="ShopCart">
+        UPDATE shop_cart
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="quantity != null">quantity = #{quantity},</if>
+            <if test="isChecked != null">is_checked = #{isChecked},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        WHERE cart_id = #{cartId}
+    </update>
+
+    <delete id="deleteShopCartByIds" parameterType="String">
+        DELETE FROM shop_cart WHERE cart_id IN
+        <foreach item="cartId" collection="array" open="(" separator="," close=")">
+            #{cartId}
+        </foreach>
+    </delete>
+
+</mapper>

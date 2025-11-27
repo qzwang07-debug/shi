@@ -1,7 +1,14 @@
 <template>
-  <div class="portal-login">
-    <div class="login-container">
-      <h2 class="login-title">C端用户登录</h2>
+  <div class="common-layout">
+    <el-container class="app-container">
+      <!-- 导入的头部导航栏组件 -->
+      <Header />
+      
+      <!-- 主要内容区域 -->
+      <el-main class="main-content">
+        <div class="portal-login">
+          <div class="login-container">
+            <h2 class="login-title">C端用户登录</h2>
       <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
         <el-form-item prop="username">
           <el-input
@@ -66,7 +73,10 @@
           </div>
         </el-form-item>
       </el-form>
-    </div>
+          </div>
+        </div>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
@@ -75,10 +85,14 @@ import { getCodeImg } from "@/api/login";
 import { appLogin } from "@/api/appLogin";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from '@/utils/jsencrypt'
-import { setToken } from "@/utils/auth"; 
+import { setAppToken } from "@/utils/auth";
+import Header from '@/views/computerMarket/Header.vue'; 
 
 export default {
   name: "PortalLogin",
+  components: {
+    Header
+  },
   data() {
     return {
       codeUrl: "",
@@ -136,7 +150,7 @@ export default {
           appLogin(this.loginForm.username, this.loginForm.password, this.loginForm.code, this.loginForm.uuid).then(res => {
             console.log('登录成功:', res);
             // 存储C端token
-            localStorage.setItem('app_token', res.token);
+            setAppToken(res.token);
             console.log("登录成功，保存token到localStorage:", res.token);
             
             // 验证token是否保存成功
@@ -174,13 +188,37 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+/* 布局样式 */
+.common-layout {
+  min-height: 100vh;
+}
+
+.app-container {
+  background-color: #FAFAF8;
+  color: #000000;
+  min-height: 100vh;
+}
+
+.main-content {
+  background-color: #FAFAF8;
+  padding: 20px;
+  margin-top: 70px; /* 为固定导航栏留出空间 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .portal-login {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-image: url("../assets/images/login-background.jpg");
   background-size: cover;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .login-container {
   width: 400px;

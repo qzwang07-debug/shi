@@ -1,5 +1,6 @@
 package com.zNova.common.core.domain.entity;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -36,6 +37,14 @@ public class AppUser extends BaseEntity
     @Excel(name = "头像地址")
     private String avatar;
 
+    /** 性别（0男 1女 2未知） */
+    @Excel(name = "性别", readConverterExp = "0=男,1=女,2=未知")
+    private String sex;
+
+    /** 手机号码 */
+    @Excel(name = "手机号码")
+    private String phonenumber;
+
     /** 帐号状态（0正常 1停用） */
     @Excel(name = "帐号状态", readConverterExp = "0=正常,1=停用")
     private String status;
@@ -51,6 +60,14 @@ public class AppUser extends BaseEntity
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Excel(name = "最后登录时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date loginDate;
+
+    /** 信用分 */
+    @Excel(name = "信用分")
+    private Integer creditScore;
+
+    /** 余额 */
+    @Excel(name = "余额")
+    private BigDecimal balance;
 
     /** 验证码（非数据库字段） */
     private String code;
@@ -108,6 +125,26 @@ public class AppUser extends BaseEntity
         return avatar;
     }
 
+    public String getSex()
+    {
+        return sex;
+    }
+
+    public void setSex(String sex)
+    {
+        this.sex = sex;
+    }
+
+    public String getPhonenumber()
+    {
+        return phonenumber;
+    }
+
+    public void setPhonenumber(String phonenumber)
+    {
+        this.phonenumber = phonenumber;
+    }
+
     public void setStatus(String status)
     {
         this.status = status;
@@ -148,6 +185,26 @@ public class AppUser extends BaseEntity
         return loginDate;
     }
 
+    public Integer getCreditScore()
+    {
+        return creditScore;
+    }
+
+    public void setCreditScore(Integer creditScore)
+    {
+        this.creditScore = creditScore;
+    }
+
+    public BigDecimal getBalance()
+    {
+        return balance;
+    }
+
+    public void setBalance(BigDecimal balance)
+    {
+        this.balance = balance;
+    }
+
     public String getCode()
     {
         return code;
@@ -176,10 +233,14 @@ public class AppUser extends BaseEntity
                 .append("password", getPassword())
                 .append("nickname", getNickname())
                 .append("avatar", getAvatar())
+                .append("sex", getSex())
+                .append("phonenumber", getPhonenumber())
                 .append("status", getStatus())
                 .append("delFlag", getDelFlag())
                 .append("loginIp", getLoginIp())
                 .append("loginDate", getLoginDate())
+                .append("creditScore", getCreditScore())
+                .append("balance", getBalance())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

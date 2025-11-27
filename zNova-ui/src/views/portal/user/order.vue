@@ -139,12 +139,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import request from '@/utils/request';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { parseTime } from '@/utils/ruoyi';
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
 const orderList = ref([]);
 const total = ref(0);
@@ -271,7 +272,17 @@ function submitComment() {
 }
 
 onMounted(() => {
-  getList();
+  // 从路由参数中获取activeTab
+  const tabIndex = route.query.activeTab;
+  if (tabIndex !== undefined) {
+    // 设置activeTab
+    activeTab.value = tabIndex;
+    // 触发对应标签的查询
+    handleTabClick({ props: { name: tabIndex } });
+  } else {
+    // 默认查询全部订单
+    getList();
+  }
 });
 </script>
 
