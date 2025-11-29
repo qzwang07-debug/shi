@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.UserBuildMapper">
+    
+    <resultMap type="UserBuild" id="UserBuildResult">
+        <result property="buildId"    column="build_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="title"    column="title"    />
+        <result property="cpuModel"    column="cpu_model"    />
+        <result property="cpuPrice"    column="cpu_price"    />
+        <result property="cpuTdp"    column="cpu_tdp"    />
+        <result property="moboBrand"    column="mobo_brand"    />
+        <result property="moboModel"    column="mobo_model"    />
+        <result property="moboSeries"    column="mobo_series"    />
+        <result property="moboPrice"    column="mobo_price"    />
+        <result property="ramBrand"    column="ram_brand"    />
+        <result property="ramInterface"    column="ram_interface"    />
+        <result property="ramFrequency"    column="ram_frequency"    />
+        <result property="ramCapacity"    column="ram_capacity"    />
+        <result property="ramPrice"    column="ram_price"    />
+        <result property="ssdFullName"    column="ssd_full_name"    />
+        <result property="ssdPrice"    column="ssd_price"    />
+        <result property="gpuBrand"    column="gpu_brand"    />
+        <result property="gpuModel"    column="gpu_model"    />
+        <result property="gpuSeries"    column="gpu_series"    />
+        <result property="gpuPrice"    column="gpu_price"    />
+        <result property="coolerFullName"    column="cooler_full_name"    />
+        <result property="coolerPrice"    column="cooler_price"    />
+        <result property="psuBrand"    column="psu_brand"    />
+        <result property="psuWattage"    column="psu_wattage"    />
+        <result property="psuSeries"    column="psu_series"    />
+        <result property="psuPrice"    column="psu_price"    />
+        <result property="caseFullName"    column="case_full_name"    />
+        <result property="casePrice"    column="case_price"    />
+        <result property="fanFullName"    column="fan_full_name"    />
+        <result property="fanPrice"    column="fan_price"    />
+        <result property="totalPrice"    column="total_price"    />
+        <result property="performanceScore"    column="performance_score"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectUserBuildVo">
+        select build_id, user_id, title, cpu_model, cpu_price, cpu_tdp, mobo_brand, mobo_model, mobo_series, mobo_price, ram_brand, ram_interface, ram_frequency, ram_capacity, ram_price, ssd_full_name, ssd_price, gpu_brand, gpu_model, gpu_series, gpu_price, cooler_full_name, cooler_price, psu_brand, psu_wattage, psu_series, psu_price, case_full_name, case_price, fan_full_name, fan_price, total_price, performance_score, del_flag, create_by, create_time, update_by, update_time, remark from sys_user_build
+    </sql>
+
+    <select id="selectUserBuildList" parameterType="UserBuild" resultMap="UserBuildResult">
+        <include refid="selectUserBuildVo"/>
+        <where>  
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="title != null  and title != ''"> and title = #{title}</if>
+            <if test="cpuModel != null  and cpuModel != ''"> and cpu_model = #{cpuModel}</if>
+            <if test="cpuPrice != null "> and cpu_price = #{cpuPrice}</if>
+            <if test="cpuTdp != null "> and cpu_tdp = #{cpuTdp}</if>
+            <if test="moboBrand != null  and moboBrand != ''"> and mobo_brand = #{moboBrand}</if>
+            <if test="moboModel != null  and moboModel != ''"> and mobo_model = #{moboModel}</if>
+            <if test="moboSeries != null  and moboSeries != ''"> and mobo_series = #{moboSeries}</if>
+            <if test="moboPrice != null "> and mobo_price = #{moboPrice}</if>
+            <if test="ramBrand != null  and ramBrand != ''"> and ram_brand = #{ramBrand}</if>
+            <if test="ramInterface != null  and ramInterface != ''"> and ram_interface = #{ramInterface}</if>
+            <if test="ramFrequency != null  and ramFrequency != ''"> and ram_frequency = #{ramFrequency}</if>
+            <if test="ramCapacity != null  and ramCapacity != ''"> and ram_capacity = #{ramCapacity}</if>
+            <if test="ramPrice != null "> and ram_price = #{ramPrice}</if>
+            <if test="ssdFullName != null  and ssdFullName != ''"> and ssd_full_name like concat('%', #{ssdFullName}, '%')</if>
+            <if test="ssdPrice != null "> and ssd_price = #{ssdPrice}</if>
+            <if test="gpuBrand != null  and gpuBrand != ''"> and gpu_brand = #{gpuBrand}</if>
+            <if test="gpuModel != null  and gpuModel != ''"> and gpu_model = #{gpuModel}</if>
+            <if test="gpuSeries != null  and gpuSeries != ''"> and gpu_series = #{gpuSeries}</if>
+            <if test="gpuPrice != null "> and gpu_price = #{gpuPrice}</if>
+            <if test="coolerFullName != null  and coolerFullName != ''"> and cooler_full_name like concat('%', #{coolerFullName}, '%')</if>
+            <if test="coolerPrice != null "> and cooler_price = #{coolerPrice}</if>
+            <if test="psuBrand != null  and psuBrand != ''"> and psu_brand = #{psuBrand}</if>
+            <if test="psuWattage != null  and psuWattage != ''"> and psu_wattage = #{psuWattage}</if>
+            <if test="psuSeries != null  and psuSeries != ''"> and psu_series = #{psuSeries}</if>
+            <if test="psuPrice != null "> and psu_price = #{psuPrice}</if>
+            <if test="caseFullName != null  and caseFullName != ''"> and case_full_name like concat('%', #{caseFullName}, '%')</if>
+            <if test="casePrice != null "> and case_price = #{casePrice}</if>
+            <if test="fanFullName != null  and fanFullName != ''"> and fan_full_name like concat('%', #{fanFullName}, '%')</if>
+            <if test="fanPrice != null "> and fan_price = #{fanPrice}</if>
+            <if test="totalPrice != null "> and total_price = #{totalPrice}</if>
+            <if test="performanceScore != null "> and performance_score = #{performanceScore}</if>
+        </where>
+    </select>
+    
+    <select id="selectUserBuildByBuildId" parameterType="Long" resultMap="UserBuildResult">
+        <include refid="selectUserBuildVo"/>
+        where build_id = #{buildId}
+    </select>
+
+    <insert id="insertUserBuild" parameterType="UserBuild" useGeneratedKeys="true" keyProperty="buildId">
+        insert into sys_user_build
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="title != null">title,</if>
+            <if test="cpuModel != null">cpu_model,</if>
+            <if test="cpuPrice != null">cpu_price,</if>
+            <if test="cpuTdp != null">cpu_tdp,</if>
+            <if test="moboBrand != null">mobo_brand,</if>
+            <if test="moboModel != null">mobo_model,</if>
+            <if test="moboSeries != null">mobo_series,</if>
+            <if test="moboPrice != null">mobo_price,</if>
+            <if test="ramBrand != null">ram_brand,</if>
+            <if test="ramInterface != null">ram_interface,</if>
+            <if test="ramFrequency != null">ram_frequency,</if>
+            <if test="ramCapacity != null">ram_capacity,</if>
+            <if test="ramPrice != null">ram_price,</if>
+            <if test="ssdFullName != null">ssd_full_name,</if>
+            <if test="ssdPrice != null">ssd_price,</if>
+            <if test="gpuBrand != null">gpu_brand,</if>
+            <if test="gpuModel != null">gpu_model,</if>
+            <if test="gpuSeries != null">gpu_series,</if>
+            <if test="gpuPrice != null">gpu_price,</if>
+            <if test="coolerFullName != null">cooler_full_name,</if>
+            <if test="coolerPrice != null">cooler_price,</if>
+            <if test="psuBrand != null">psu_brand,</if>
+            <if test="psuWattage != null">psu_wattage,</if>
+            <if test="psuSeries != null">psu_series,</if>
+            <if test="psuPrice != null">psu_price,</if>
+            <if test="caseFullName != null">case_full_name,</if>
+            <if test="casePrice != null">case_price,</if>
+            <if test="fanFullName != null">fan_full_name,</if>
+            <if test="fanPrice != null">fan_price,</if>
+            <if test="totalPrice != null">total_price,</if>
+            <if test="performanceScore != null">performance_score,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="title != null">#{title},</if>
+            <if test="cpuModel != null">#{cpuModel},</if>
+            <if test="cpuPrice != null">#{cpuPrice},</if>
+            <if test="cpuTdp != null">#{cpuTdp},</if>
+            <if test="moboBrand != null">#{moboBrand},</if>
+            <if test="moboModel != null">#{moboModel},</if>
+            <if test="moboSeries != null">#{moboSeries},</if>
+            <if test="moboPrice != null">#{moboPrice},</if>
+            <if test="ramBrand != null">#{ramBrand},</if>
+            <if test="ramInterface != null">#{ramInterface},</if>
+            <if test="ramFrequency != null">#{ramFrequency},</if>
+            <if test="ramCapacity != null">#{ramCapacity},</if>
+            <if test="ramPrice != null">#{ramPrice},</if>
+            <if test="ssdFullName != null">#{ssdFullName},</if>
+            <if test="ssdPrice != null">#{ssdPrice},</if>
+            <if test="gpuBrand != null">#{gpuBrand},</if>
+            <if test="gpuModel != null">#{gpuModel},</if>
+            <if test="gpuSeries != null">#{gpuSeries},</if>
+            <if test="gpuPrice != null">#{gpuPrice},</if>
+            <if test="coolerFullName != null">#{coolerFullName},</if>
+            <if test="coolerPrice != null">#{coolerPrice},</if>
+            <if test="psuBrand != null">#{psuBrand},</if>
+            <if test="psuWattage != null">#{psuWattage},</if>
+            <if test="psuSeries != null">#{psuSeries},</if>
+            <if test="psuPrice != null">#{psuPrice},</if>
+            <if test="caseFullName != null">#{caseFullName},</if>
+            <if test="casePrice != null">#{casePrice},</if>
+            <if test="fanFullName != null">#{fanFullName},</if>
+            <if test="fanPrice != null">#{fanPrice},</if>
+            <if test="totalPrice != null">#{totalPrice},</if>
+            <if test="performanceScore != null">#{performanceScore},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateUserBuild" parameterType="UserBuild">
+        update sys_user_build
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="cpuModel != null">cpu_model = #{cpuModel},</if>
+            <if test="cpuPrice != null">cpu_price = #{cpuPrice},</if>
+            <if test="cpuTdp != null">cpu_tdp = #{cpuTdp},</if>
+            <if test="moboBrand != null">mobo_brand = #{moboBrand},</if>
+            <if test="moboModel != null">mobo_model = #{moboModel},</if>
+            <if test="moboSeries != null">mobo_series = #{moboSeries},</if>
+            <if test="moboPrice != null">mobo_price = #{moboPrice},</if>
+            <if test="ramBrand != null">ram_brand = #{ramBrand},</if>
+            <if test="ramInterface != null">ram_interface = #{ramInterface},</if>
+            <if test="ramFrequency != null">ram_frequency = #{ramFrequency},</if>
+            <if test="ramCapacity != null">ram_capacity = #{ramCapacity},</if>
+            <if test="ramPrice != null">ram_price = #{ramPrice},</if>
+            <if test="ssdFullName != null">ssd_full_name = #{ssdFullName},</if>
+            <if test="ssdPrice != null">ssd_price = #{ssdPrice},</if>
+            <if test="gpuBrand != null">gpu_brand = #{gpuBrand},</if>
+            <if test="gpuModel != null">gpu_model = #{gpuModel},</if>
+            <if test="gpuSeries != null">gpu_series = #{gpuSeries},</if>
+            <if test="gpuPrice != null">gpu_price = #{gpuPrice},</if>
+            <if test="coolerFullName != null">cooler_full_name = #{coolerFullName},</if>
+            <if test="coolerPrice != null">cooler_price = #{coolerPrice},</if>
+            <if test="psuBrand != null">psu_brand = #{psuBrand},</if>
+            <if test="psuWattage != null">psu_wattage = #{psuWattage},</if>
+            <if test="psuSeries != null">psu_series = #{psuSeries},</if>
+            <if test="psuPrice != null">psu_price = #{psuPrice},</if>
+            <if test="caseFullName != null">case_full_name = #{caseFullName},</if>
+            <if test="casePrice != null">case_price = #{casePrice},</if>
+            <if test="fanFullName != null">fan_full_name = #{fanFullName},</if>
+            <if test="fanPrice != null">fan_price = #{fanPrice},</if>
+            <if test="totalPrice != null">total_price = #{totalPrice},</if>
+            <if test="performanceScore != null">performance_score = #{performanceScore},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where build_id = #{buildId}
+    </update>
+
+    <delete id="deleteUserBuildByBuildId" parameterType="Long">
+        delete from sys_user_build where build_id = #{buildId}
+    </delete>
+
+    <delete id="deleteUserBuildByBuildIds" parameterType="String">
+        delete from sys_user_build where build_id in 
+        <foreach item="buildId" collection="array" open="(" separator="," close=")">
+            #{buildId}
+        </foreach>
+    </delete>
+</mapper>
