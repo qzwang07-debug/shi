@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.HardwarePowerSupplyMapper">
+    
+    <resultMap type="HardwarePowerSupply" id="HardwarePowerSupplyResult">
+        <result property="id"    column="id"    />
+        <result property="wattage"    column="wattage"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectHardwarePowerSupplyVo">
+        select id, wattage, create_time, update_time from hardware_power_supply
+    </sql>
+
+    <select id="selectHardwarePowerSupplyList" parameterType="HardwarePowerSupply" resultMap="HardwarePowerSupplyResult">
+        <include refid="selectHardwarePowerSupplyVo"/>
+        <where>  
+            <if test="wattage != null "> and wattage = #{wattage}</if>
+        </where>
+    </select>
+    
+    <select id="selectHardwarePowerSupplyById" parameterType="Long" resultMap="HardwarePowerSupplyResult">
+        <include refid="selectHardwarePowerSupplyVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertHardwarePowerSupply" parameterType="HardwarePowerSupply" useGeneratedKeys="true" keyProperty="id">
+        insert into hardware_power_supply
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="wattage != null">wattage,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="wattage != null">#{wattage},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateHardwarePowerSupply" parameterType="HardwarePowerSupply">
+        update hardware_power_supply
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="wattage != null">wattage = #{wattage},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteHardwarePowerSupplyById" parameterType="Long">
+        delete from hardware_power_supply where id = #{id}
+    </delete>
+
+    <delete id="deleteHardwarePowerSupplyByIds" parameterType="String">
+        delete from hardware_power_supply where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
