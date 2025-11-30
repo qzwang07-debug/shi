@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.SysGameMapper">
+    
+    <resultMap type="SysGame" id="SysGameResult">
+        <result property="gameId"    column="game_id"    />
+        <result property="gameName"    column="game_name"    />
+        <result property="description"    column="description"    />
+    </resultMap>
+
+    <resultMap id="SysGameSysGameBenchmarkResult" type="SysGame" extends="SysGameResult">
+        <collection property="sysGameBenchmarkList" ofType="SysGameBenchmark" column="game_id" select="selectSysGameBenchmarkList" />
+    </resultMap>
+
+    <resultMap type="SysGameBenchmark" id="SysGameBenchmarkResult">
+        <result property="id"    column="id"    />
+        <result property="gameId"    column="game_id"    />
+        <result property="platformType"    column="platform_type"    />
+        <result property="baseScore"    column="base_score"    />
+        <result property="baseFps"    column="base_fps"    />
+        <result property="resolution"    column="resolution"    />
+        <result property="minScore"    column="min_score"    />
+        <result property="maxScore"    column="max_score"    />
+    </resultMap>
+
+    <sql id="selectSysGameVo">
+        select game_id, game_name, description from sys_game
+    </sql>
+
+    <select id="selectSysGameList" parameterType="SysGame" resultMap="SysGameResult">
+        <include refid="selectSysGameVo"/>
+        <where>  
+            <if test="gameName != null  and gameName != ''"> and game_name like concat('%', #{gameName}, '%')</if>
+            <if test="description != null  and description != ''"> and description = #{description}</if>
+        </where>
+    </select>
+    
+    <select id="selectSysGameByGameId" parameterType="Long" resultMap="SysGameSysGameBenchmarkResult">
+        select game_id, game_name, description
+        from sys_game
+        where game_id = #{gameId}
+    </select>
+
+    <select id="selectSysGameBenchmarkList" resultMap="SysGameBenchmarkResult">
+        select id, game_id, platform_type, base_score, base_fps, resolution, min_score, max_score
+        from sys_game_benchmark
+        where game_id = #{game_id}
+    </select>
+
+    <insert id="insertSysGame" parameterType="SysGame" useGeneratedKeys="true" keyProperty="gameId">
+        insert into sys_game
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="gameName != null and gameName != ''">game_name,</if>
+            <if test="description != null">description,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="gameName != null and gameName != ''">#{gameName},</if>
+            <if test="description != null">#{description},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSysGame" parameterType="SysGame">
+        update sys_game
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="gameName != null and gameName != ''">game_name = #{gameName},</if>
+            <if test="description != null">description = #{description},</if>
+        </trim>
+        where game_id = #{gameId}
+    </update>
+
+    <delete id="deleteSysGameByGameId" parameterType="Long">
+        delete from sys_game where game_id = #{gameId}
+    </delete>
+
+    <delete id="deleteSysGameByGameIds" parameterType="String">
+        delete from sys_game where game_id in 
+        <foreach item="gameId" collection="array" open="(" separator="," close=")">
+            #{gameId}
+        </foreach>
+    </delete>
+    
+    <delete id="deleteSysGameBenchmarkByGameIds" parameterType="String">
+        delete from sys_game_benchmark where game_id in 
+        <foreach item="gameId" collection="array" open="(" separator="," close=")">
+            #{gameId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteSysGameBenchmarkByGameId" parameterType="Long">
+        delete from sys_game_benchmark where game_id = #{gameId}
+    </delete>
+
+    <insert id="batchSysGameBenchmark">
+        insert into sys_game_benchmark( id, game_id, platform_type, base_score, base_fps, resolution, min_score, max_score) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.id}, #{item.gameId}, #{item.platformType}, #{item.baseScore}, #{item.baseFps}, #{item.resolution}, #{item.minScore}, #{item.maxScore})
+        </foreach>
+    </insert>
+</mapper>

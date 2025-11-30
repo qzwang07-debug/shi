@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.SysGameBenchmarkMapper">
+
+    <resultMap type="SysGameBenchmark" id="SysGameBenchmarkResult">
+        <result property="id"    column="id"    />
+        <result property="gameId"    column="game_id"    />
+        <result property="platformType"    column="platform_type"    />
+        <result property="resolution"    column="resolution"    />
+        <result property="minScore"    column="min_score"    />
+        <result property="maxScore"    column="max_score"    />
+        <result property="baseScore"    column="base_score"    />
+    </resultMap>
+
+    <sql id="selectSysGameBenchmarkVo">
+        select id, game_id, platform_type, resolution, min_score, max_score, base_score from sys_game_benchmark
+    </sql>
+
+    <select id="selectSysGameBenchmarkList" parameterType="SysGameBenchmark" resultMap="SysGameBenchmarkResult">
+        <include refid="selectSysGameBenchmarkVo"/>
+        <where>
+            <if test="gameId != null "> and game_id = #{gameId}</if>
+            <if test="platformType != null  and platformType != ''"> and platform_type = #{platformType}</if>
+            <if test="resolution != null  and resolution != ''"> and resolution = #{resolution}</if>
+        </where>
+    </select>
+
+    <select id="selectSysGameBenchmarkById" parameterType="Long" resultMap="SysGameBenchmarkResult">
+        <include refid="selectSysGameBenchmarkVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertSysGameBenchmark" parameterType="SysGameBenchmark" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_game_benchmark
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="gameId != null">game_id,</if>
+            <if test="platformType != null">platform_type,</if>
+            <if test="resolution != null">resolution,</if>
+            <if test="minScore != null">min_score,</if>
+            <if test="maxScore != null">max_score,</if>
+            <if test="baseScore != null">base_score,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="gameId != null">#{gameId},</if>
+            <if test="platformType != null">#{platformType},</if>
+            <if test="resolution != null">#{resolution},</if>
+            <if test="minScore != null">#{minScore},</if>
+            <if test="maxScore != null">#{maxScore},</if>
+            <if test="baseScore != null">#{baseScore},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSysGameBenchmark" parameterType="SysGameBenchmark">
+        update sys_game_benchmark
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="gameId != null">game_id = #{gameId},</if>
+            <if test="platformType != null">platform_type = #{platformType},</if>
+            <if test="resolution != null">resolution = #{resolution},</if>
+            <if test="minScore != null">min_score = #{minScore},</if>
+            <if test="maxScore != null">max_score = #{maxScore},</if>
+            <if test="baseScore != null">base_score = #{baseScore},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSysGameBenchmarkById" parameterType="Long">
+        delete from sys_game_benchmark where id = #{id}
+    </delete>
+
+    <delete id="deleteSysGameBenchmarkByIds" parameterType="String">
+        delete from sys_game_benchmark where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectBenchmarkByScore" resultMap="SysGameBenchmarkResult">
+        <include refid="selectSysGameBenchmarkVo"/>
+        WHERE game_id = #{gameId}
+        AND platform_type = #{platformType}
+        AND resolution = #{resolution}
+        AND #{score} BETWEEN min_score AND max_score
+        LIMIT 1
+    </select>
+
+</mapper>

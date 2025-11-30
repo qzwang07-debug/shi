@@ -26,3 +26,21 @@ export function listFrontMemory(query) {
     params: query
   })
 }
+
+// 查询主板列表（前台专用）
+export function listFrontMotherboard(query) {
+  return request({
+    url: '/front/hardware/motherboard/list',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询电源列表（前台专用）
+export function listFrontPower(query) {
+  return request({
+    url: '/front/hardware/power/list',
+    method: 'get',
+    params: query
+  })
+}

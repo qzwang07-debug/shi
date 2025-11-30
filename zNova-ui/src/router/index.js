@@ -108,10 +108,10 @@ component: () => import('@/views/computerMarket/cart/index.vue'),
   }
 },
  {
-  path: '/computer-market/Build',
+  path: '/computer-market/build',
   name: 'ComputerBuild',
   // 修正路径：添加 shop/ 层级，匹配实际文件位置
-  component: () => import('@/views/computerMarket/shop/Build.vue'), 
+  component: () => import('@/views/computerMarket/shop/build.vue'),
   hidden: true,
   meta: {
     title: '电脑装机服务',

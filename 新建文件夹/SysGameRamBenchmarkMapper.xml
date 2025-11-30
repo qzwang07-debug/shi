@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.SysGameRamBenchmarkMapper">
+    
+    <resultMap type="SysGameRamBenchmark" id="SysGameRamBenchmarkResult">
+        <result property="id"    column="id"    />
+        <result property="gameId"    column="game_id"    />
+        <result property="ramType"    column="ram_type"    />
+        <result property="frequency"    column="frequency"    />
+        <result property="ratio"    column="ratio"    />
+    </resultMap>
+
+    <sql id="selectSysGameRamBenchmarkVo">
+        select id, game_id, ram_type, frequency, ratio from sys_game_ram_benchmark
+    </sql>
+
+    <select id="selectSysGameRamBenchmarkList" parameterType="SysGameRamBenchmark" resultMap="SysGameRamBenchmarkResult">
+        <include refid="selectSysGameRamBenchmarkVo"/>
+        <where>  
+            <if test="gameId != null "> and game_id = #{gameId}</if>
+            <if test="ramType != null  and ramType != ''"> and ram_type = #{ramType}</if>
+            <if test="frequency != null "> and frequency = #{frequency}</if>
+            <if test="ratio != null "> and ratio = #{ratio}</if>
+        </where>
+    </select>
+    
+    <select id="selectSysGameRamBenchmarkById" parameterType="Long" resultMap="SysGameRamBenchmarkResult">
+        <include refid="selectSysGameRamBenchmarkVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertSysGameRamBenchmark" parameterType="SysGameRamBenchmark" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_game_ram_benchmark
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="gameId != null">game_id,</if>
+            <if test="ramType != null and ramType != ''">ram_type,</if>
+            <if test="frequency != null">frequency,</if>
+            <if test="ratio != null">ratio,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="gameId != null">#{gameId},</if>
+            <if test="ramType != null and ramType != ''">#{ramType},</if>
+            <if test="frequency != null">#{frequency},</if>
+            <if test="ratio != null">#{ratio},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSysGameRamBenchmark" parameterType="SysGameRamBenchmark">
+        update sys_game_ram_benchmark
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="gameId != null">game_id = #{gameId},</if>
+            <if test="ramType != null and ramType != ''">ram_type = #{ramType},</if>
+            <if test="frequency != null">frequency = #{frequency},</if>
+            <if test="ratio != null">ratio = #{ratio},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSysGameRamBenchmarkById" parameterType="Long">
+        delete from sys_game_ram_benchmark where id = #{id}
+    </delete>
+
+    <delete id="deleteSysGameRamBenchmarkByIds" parameterType="String">
+        delete from sys_game_ram_benchmark where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
