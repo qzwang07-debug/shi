@@ -214,7 +214,7 @@ export default {
   align-items: center;
   width: 100%;
   height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
+  background-image: url("@/assets/images/login-background.jpg");
   background-size: cover;
   border-radius: 8px;
   overflow: hidden;

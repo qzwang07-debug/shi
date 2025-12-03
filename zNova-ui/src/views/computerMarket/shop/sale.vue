@@ -152,8 +152,8 @@
           >
             <div class="card-image-wrapper">
               <div class="image-overlay"></div>
-              <el-image 
-                :src="product.imageUrl ? '/dev-api' + product.imageUrl : '@/assets/images/default-product.jpg'" 
+              <el-image
+                :src="product.imageUrl ? handleImageUrl(product.imageUrl) : handleImageUrl('@/assets/images/default-product.jpg')"
                 alt="商品图片"
                 class="product-image"
                 fit="cover"
@@ -282,6 +282,7 @@ import {
 } from '@element-plus/icons-vue';
 import Header from '../Header.vue';
 import { addToCart as addToCartAPI } from '@/api/shop/cart';
+import { handleImageUrl } from '@/utils/ruoyi';
 
 const router = useRouter();
 
@@ -363,13 +364,13 @@ const calculateScore = (product) => {
   }
 
   if (product.memoryType === 'DDR4') {
-    memoryScore = product.memoryFrequency * 2;
+    memoryScore = product.memoryFrequency ;
   } else if (product.memoryType === 'DDR5') {
-    memoryScore = product.memoryFrequency;
+    memoryScore = product.memoryFrequency/2;
   }
 
   const totalScore = cpuBaseScore + memoryScore + gpuScore;
-  const maxScore = 32387;
+  const maxScore = 28387;
   const percentage = Math.min(100, Math.round((totalScore / maxScore) * 100));
 
   return {

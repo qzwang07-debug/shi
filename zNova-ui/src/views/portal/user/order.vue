@@ -1,5 +1,6 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" style="padding-top: 60px;">
+    <Header />
     <!-- 状态切换栏 -->
     <el-tabs v-model="activeTab" @tab-click="handleTabClick">
       <el-tab-pane label="全部订单" name="all"></el-tab-pane>
@@ -143,6 +144,7 @@ import { useRouter, useRoute } from 'vue-router';
 import request from '@/utils/request';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { parseTime } from '@/utils/ruoyi';
+import Header from '@/views/computerMarket/Header.vue';
 
 const router = useRouter();
 const route = useRoute();

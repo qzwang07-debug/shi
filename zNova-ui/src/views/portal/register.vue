@@ -131,6 +131,7 @@ import { appRegister } from "@/api/appLogin";
 import { Plus } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import Header from '@/views/computerMarket/Header.vue';
+import { handleImageUrl } from '@/utils/ruoyi';
 
 export default {
   name: "PortalRegister",
@@ -284,7 +285,7 @@ export default {
   align-items: center;
   width: 100%;
   height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
+  background-image: url("@/assets/images/login-background.jpg");
   background-size: cover;
   border-radius: 8px;
   overflow: hidden;

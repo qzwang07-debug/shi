@@ -42,7 +42,7 @@
 
         <div class="qr-section">
           <div class="qr-box">
-            <img src="@/assets/images/pay.png" alt="支付二维码" class="qr-img" />
+            <img :src="handleImageUrl('@/assets/images/pay.png')" alt="支付二维码" class="qr-img" />
             <div class="qr-mask" v-if="loading">
               <el-icon class="is-loading"><Loading /></el-icon>
               <p>支付处理中...</p>
@@ -76,7 +76,7 @@ import request from '@/utils/request'; // 直接使用request调用，也可封�
 import { ElMessage } from 'element-plus';
 import { Loading } from '@element-plus/icons-vue';
 import { getAppToken } from '@/utils/auth';
-
+import { handleImageUrl } from '@/utils/ruoyi';
 
 const route = useRoute();
 const router = useRouter();

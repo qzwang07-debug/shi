@@ -553,7 +553,7 @@ async function handleUpdate(row) {
         const modelEndIndex = cardParts.findIndex((part, index) => {
           if (index === 0) return false
           const upperPart = part.toUpperCase()
-          return !["NVIDIA", "AMD", "INTEL", "GEFORCE", "RADEON", "ARC", "RTX", "RX", "GT", "TI", "SUPER"].includes(upperPart) && !/^\d+$/.test(part)
+          return !["NVIDIA", "AMD", "INTEL", "GEFORCE", "RADEON", "ARC", "RTX", "RX", "GT", "TI", "SUPER", "XT", "XTX"].includes(upperPart) && !/^\d+$/.test(part)
         })
         
         const modelParts = modelEndIndex > 0 ? cardParts.slice(1, modelEndIndex) : cardParts.slice(1)

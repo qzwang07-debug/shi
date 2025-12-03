@@ -244,3 +244,14 @@ export function getNormalPath(p) {
 export function blobValidate(data) {
   return data.type !== 'application/json'
 }
+
+//通用图片地址处理
+export function handleImageUrl(url) {
+  if (!url) return "";
+  // 如果已经是 http 或 https 开头，说明是 OSS 地址，直接返回
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  // 否则视为本地相对路径，拼接基准路径 (VITE_APP_BASE_API 在 .env 文件中配置，通常是 /dev-api 或 /prod-api)
+  return import.meta.env.VITE_APP_BASE_API + url;
+}

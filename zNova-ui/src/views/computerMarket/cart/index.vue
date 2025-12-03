@@ -58,7 +58,7 @@
           
           <div class="col-info product-info">
             <el-image 
-              :src="item.productImg ? baseUrl + item.productImg : defaultImg" 
+              :src="item.productImg ? handleImageUrl(item.productImg) : defaultImg" 
               class="product-img"
               fit="cover"
             />
@@ -157,7 +157,7 @@ import { listCart, updateCart, delCart } from '@/api/shop/cart';
 import Header from '../Header.vue';
 import { Delete } from '@element-plus/icons-vue';
 import { getAppToken } from '@/utils/auth';
-
+import { handleImageUrl } from '@/utils/ruoyi'
 const router = useRouter();
 const route = useRoute();
 const baseUrl = import.meta.env.VITE_APP_BASE_API;

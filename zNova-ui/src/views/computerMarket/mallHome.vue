@@ -62,7 +62,7 @@
             <div class="product-detail">
               <div class="product-image">
                 <img 
-                  :src="product.imageUrl ? '/dev-api' + product.imageUrl : '@/assets/images/default-product.jpg'" 
+                  :src="product.imageUrl ? handleImageUrl(product.imageUrl) : '@/assets/images/default-product.jpg'" 
                   alt="商品图片" 
                   class="product-img"
                 >
@@ -115,8 +115,10 @@
               </div>
 
               <div class="service-buttons">
-                <a href="#" class="action-btn rent">立即租赁</a>
-                <a href="#" class="action-btn buy">立即购买</a>
+                <a href="#" class="action-btn detail" @click.prevent="goToDetail(product)">商品详情</a>
+                <a href="#" class="action-btn" :class="product.productType === '1' ? 'rent' : 'buy'" @click.prevent="handlePurchase(product)">
+                  {{ product.productType === '1' ? '立即租赁' : '立即购买' }}
+                </a>
                 <a href="#" class="action-btn consult" @click.prevent="addToCart(product)">加入购物车</a>
               </div>
             </div>
@@ -139,7 +141,7 @@ import { ElContainer, ElMain, ElFooter, ElCarousel, ElCarouselItem, ElForm, ElFo
 import { listFrontProduct } from "@/api/front/product";
 import Header from './Header.vue'; // 导入导航栏组件
 import { addToCart as addToCartAPI } from '@/api/shop/cart';
-
+import { handleImageUrl } from '@/utils/ruoyi'
 const router = useRouter();
 
 // 导航方法
@@ -154,6 +156,35 @@ const goToSale = () => {
 // 新增装机页面导航
 const goToBuild = () => {
   router.push('/computer-market/build');
+};
+
+// 跳转到商品详情页
+const goToDetail = (product) => {
+  router.push(`/computer-market/product-detail/${product.id}`);
+};
+
+// 处理立即租赁/购买
+const handlePurchase = (product) => {
+  // 构建商品数据
+  const productData = {
+    productId: product.id,
+    productName: product.productName,
+    productImg: product.imageUrl,
+    price: product.productType === '1' ? product.rentPrice : product.salePrice,
+    businessType: product.productType === '1' ? '1' : '2',
+    quantity: 1,
+    daterange: [], // 租赁日期范围
+    rentDays: 0    // 租赁天数
+  };
+
+  // 跳转到订单结算页面，携带商品数据
+  router.push({
+    path: '/computer-market/checkout',
+    query: {
+      directBuy: 'true',
+      product: encodeURIComponent(JSON.stringify(productData))
+    }
+  });
 };
 
 // 添加到购物车
@@ -193,13 +224,13 @@ const calculateScore = (product) => {
   }
 
   if (product.memoryType === 'DDR4') {
-    memoryScore = product.memoryFrequency * 2;
+    memoryScore = product.memoryFrequency ;
   } else if (product.memoryType === 'DDR5') {
-    memoryScore = product.memoryFrequency;
+    memoryScore = product.memoryFrequency/2;
   }
 
   const totalScore = cpuBaseScore + memoryScore + gpuScore;
-  const maxScore = 32387;
+  const maxScore = 28387;
   const percentage = Math.min(100, Math.round((totalScore / maxScore) * 100));
 
   return {
@@ -575,6 +606,10 @@ flex: 0 0 350px;
   background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
 }
 
+.action-btn.detail {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
 .action-btn::before {
   content: '';
   display: inline-block;
@@ -611,5 +646,9 @@ flex: 0 0 350px;
 
 .action-btn.consult::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z' /%3E%3C/svg%3E");
+}
+
+.action-btn.detail::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' /%3E%3C/svg%3E");
 }
 </style>

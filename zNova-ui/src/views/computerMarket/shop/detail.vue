@@ -15,9 +15,8 @@
         <div class="product-overview">
           <div class="gallery-section">
             <div class="main-image-box">
-              <el-image 
-                :src="product.imageUrl ? '/dev-api' + product.imageUrl : defaultImage" 
-                :preview-src-list="[product.imageUrl ? '/dev-api' + product.imageUrl : defaultImage]"
+              <el-image :src="product.imageUrl ? handleImageUrl(product.imageUrl) : defaultImage"
+                :preview-src-list="[product.imageUrl ? handleImageUrl(product.imageUrl) : defaultImage]"
                 fit="cover"
                 class="main-image"
                 :initial-index="0"
@@ -227,6 +226,7 @@ import { getFrontProduct } from "@/api/front/product";
 import { addToCart as addToCartAPI } from '@/api/shop/cart';
 import { listFrontComment } from '@/api/front/comment';
 import { ElMessage } from 'element-plus';
+import { handleImageUrl } from '@/utils/ruoyi'
 import {
   ZoomIn, QuestionFilled, CircleCheckFilled, CircleCloseFilled,
   ShoppingCart, CircleCheck, Van, Refresh
@@ -330,9 +330,28 @@ const addToCart = async () => {
 
 // 立即下单
 const buyNow = () => {
-  addToCart();
-  // 建议跳转到购物车页，或者直接跳结算页
-  router.push('/computer-market/cart'); 
+  if (!product.value) return;
+
+  // 构建商品数据
+  const productData = {
+    productId: product.value.id,
+    productName: product.value.productName,
+    productImg: product.value.imageUrl,
+    price: isRent.value ? product.value.rentPrice : product.value.salePrice,
+    businessType: isRent.value ? '1' : '2',
+    quantity: quantity.value,
+    daterange: [], // 租赁日期范围
+    rentDays: 0    // 租赁天数
+  };
+
+  // 跳转到订单结算页面，携带商品数据
+  router.push({
+    path: '/computer-market/checkout',
+    query: {
+      directBuy: 'true',
+      product: encodeURIComponent(JSON.stringify(productData))
+    }
+  });
 };
 
 // 获取评价列表
@@ -384,6 +403,13 @@ const handleTabChange = (tab) => {
 onMounted(() => {
   fetchDetail();
 });
+
+// 监听product变化，当商品数据加载完成后自动获取评价数据
+watch(() => product.value, (newProduct) => {
+  if (newProduct && newProduct.id) {
+    getCommentList();
+  }
+}, { immediate: false });
 </script>
 
 <style scoped>

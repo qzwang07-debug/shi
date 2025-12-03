@@ -172,7 +172,7 @@ import { listAddress } from "@/api/portal/address";
 import { createOrder } from "@/api/portal/order";
 import { getAppToken } from '@/utils/auth';
 import Header from '@/views/computerMarket/Header.vue';
-
+import { handleImageUrl } from '@/utils/ruoyi';
 const route = useRoute();
 const router = useRouter();
 
@@ -239,35 +239,53 @@ const init = async () => {
     return;
   }
 
-  const cartIdsStr = route.query.ids;
-  if (!cartIdsStr) {
-    ElMessage.error("参数错误，未选择商品");
-    router.push('/computer-market/cart');
-    return;
-  }
-  const cartIdArr = cartIdsStr.split(',').map(Number);
+  // 检查是否是直接购买模式
+  const directBuy = route.query.directBuy === 'true';
+  const productStr = route.query.product;
 
-  // 1. 获取购物车数据并过滤
-  try {
-    const res = await listCart(); // 假设这个接口返回该用户所有购物车项
-    const allItems = res.rows || res.data || [];
-    
-    // 过滤出选中的商品
-    checkoutList.value = allItems.filter(item => cartIdArr.includes(item.cartId)).map(item => ({
-      ...item,
-      daterange: [], // 初始化日期范围
-      rentDays: 0    // 初始化租期
-    }));
-
-    if (checkoutList.value.length === 0) {
-      ElMessage.warning("未找到指定商品，请重新选择");
-      router.push('/computer-market/cart');
+  if (directBuy && productStr) {
+    // 直接购买模式：从路由参数获取商品数据
+    try {
+      const productData = JSON.parse(decodeURIComponent(productStr));
+      checkoutList.value = [productData];
+    } catch (error) {
+      console.error("解析商品数据失败:", error);
+      ElMessage.error("商品数据错误");
+      router.push('/computer-market');
+      return;
     }
-  } catch (error) {
-    console.error("Failed to fetch cart items", error);
-    if (error && error.toString().includes('认证失败')) {
-      ElMessage.error("登录状态已过期，请重新登录");
-      router.push('/portal/login?redirect=' + encodeURIComponent(route.fullPath));
+  } else {
+    // 购物车模式：从购物车获取数据
+    const cartIdsStr = route.query.ids;
+    if (!cartIdsStr) {
+      ElMessage.error("参数错误，未选择商品");
+      router.push('/computer-market/cart');
+      return;
+    }
+    const cartIdArr = cartIdsStr.split(',').map(Number);
+
+    // 1. 获取购物车数据并过滤
+    try {
+      const res = await listCart(); // 假设这个接口返回该用户所有购物车项
+      const allItems = res.rows || res.data || [];
+      
+      // 过滤出选中的商品
+      checkoutList.value = allItems.filter(item => cartIdArr.includes(item.cartId)).map(item => ({
+        ...item,
+        daterange: [], // 初始化日期范围
+        rentDays: 0    // 初始化租期
+      }));
+
+      if (checkoutList.value.length === 0) {
+        ElMessage.warning("未找到指定商品，请重新选择");
+        router.push('/computer-market/cart');
+      }
+    } catch (error) {
+      console.error("Failed to fetch cart items", error);
+      if (error && error.toString().includes('认证失败')) {
+        ElMessage.error("登录状态已过期，请重新登录");
+        router.push('/portal/login?redirect=' + encodeURIComponent(route.fullPath));
+      }
     }
   }
 
