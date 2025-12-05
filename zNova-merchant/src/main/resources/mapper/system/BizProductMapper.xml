@@ -222,4 +222,15 @@
         </where>
         ORDER BY p.id DESC
     </select>
+    <update id="decreaseStock">
+        UPDATE biz_product
+        SET stock_quantity = stock_quantity - #{quantity}
+        WHERE id = #{id} AND stock_quantity >= #{quantity}
+    </update>
+
+    <update id="increaseStock">
+        UPDATE biz_product
+        SET stock_quantity = stock_quantity + #{quantity}
+        WHERE id = #{id}
+    </update>
 </mapper>

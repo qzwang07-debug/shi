@@ -2,6 +2,7 @@ package com.zNova.system.service;
 
 import java.util.List;
 import com.zNova.system.domain.ShopOrder;
+import org.springframework.stereotype.Service;
 
 /**
  * 订单主Service接口
@@ -58,4 +59,24 @@ public interface IShopOrderService
      * @return 结果
      */
     public int deleteShopOrderByOrderId(Long orderId);
+
+    /**
+     * 用户取消订单
+     */
+    void userCancelOrder(Long orderId);
+
+    /**
+     * 用户申请退款
+     */
+    void userApplyRefund(Long orderId);
+
+    /**
+     * 管理员审核退款
+     */
+    void adminAuditRefund(Long orderId, boolean pass);
+    /**
+     * 商家确认归还（租赁业务）
+     * @param orderId 订单ID
+     */
+    void confirmReturn(Long orderId);
 }

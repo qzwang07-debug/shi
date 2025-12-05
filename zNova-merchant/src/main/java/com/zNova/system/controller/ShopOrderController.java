@@ -2,14 +2,12 @@ package com.zNova.system.controller;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+
+import com.alibaba.fastjson2.JSONObject;
+import com.zNova.common.exception.ServiceException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import com.zNova.common.annotation.Log;
 import com.zNova.common.core.controller.BaseController;
 import com.zNova.common.core.domain.AjaxResult;
@@ -116,22 +114,13 @@ public class ShopOrderController extends BaseController
     @PutMapping("/confirmReturn/{orderId}")
     public AjaxResult confirmReturn(@PathVariable Long orderId)
     {
-        ShopOrder order = shopOrderService.selectShopOrderByOrderId(orderId);
-        if (order == null) {
-            return error("订单不存在");
+        try {
+            // 调用服务层方法，实现库存恢复和状态更新
+            shopOrderService.confirmReturn(orderId);
+            return success();
+        } catch (ServiceException e) {
+            return error(e.getMessage());
         }
-
-        // 1. 校验权限
-        checkOrderPermission(order);
-
-        // 2. 校验状态 (只有 "4=归还中" 才能确认收货)
-        if (!"4".equals(order.getStatus())) {
-            return error("订单不是归还中状态，无法确认");
-        }
-
-        order.setStatus("3"); // 3=已完成
-        shopOrderService.updateShopOrder(order);
-        return success();
     }
 
     /**
@@ -147,5 +136,24 @@ public class ShopOrderController extends BaseController
                 throw new RuntimeException("无权操作非本店订单");
             }
         }
+    }
+    @PostMapping("/cancel")
+    public AjaxResult cancel(@RequestBody ShopOrder order) {
+        shopOrderService.userCancelOrder(order.getOrderId());
+        return success();
+    }
+
+    @PostMapping("/applyRefund")
+    public AjaxResult applyRefund(@RequestBody ShopOrder order) {
+        shopOrderService.userApplyRefund(order.getOrderId());
+        return success();
+    }
+
+    @PostMapping("/auditRefund")
+    public AjaxResult auditRefund(@RequestBody JSONObject body) {
+        Long orderId = body.getLong("orderId");
+        Boolean pass = body.getBoolean("pass");
+        shopOrderService.adminAuditRefund(orderId, pass);
+        return success();
     }
 }

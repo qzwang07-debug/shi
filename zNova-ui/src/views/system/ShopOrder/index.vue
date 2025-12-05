@@ -15,7 +15,10 @@
           <el-option label="待发货" value="1" />
           <el-option label="已发货/租赁中" value="2" />
           <el-option label="已完成" value="3" />
-          <el-option label="归还中" value="4" />
+          <el-option label="已取消" value="4" />
+          <el-option label="退款审核中" value="5" />
+          <el-option label="已退款" value="6" />
+          <el-option label="归还中" value="7" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -57,24 +60,35 @@
         <template #default="scope">
           <el-button link type="primary" icon="Search" @click="handleDetail(scope.row)">详情</el-button>
           
-          <!-- 发货按钮：仅状态1显示 (移除了 v-hasPermi) -->
-          <el-button 
+          <!-- 发货按钮：仅状态1显示 (待发货) -->
+          <el-button
             v-if="scope.row.status === '1'"
-            link 
-            type="success" 
-            icon="Van" 
+            link
+            type="success"
+            icon="Van"
             @click="handleShip(scope.row)"
           >发货</el-button>
 
-          <!-- 确认收货按钮：仅状态4（归还中）显示 (移除了 v-hasPermi) -->
-          <el-button 
-            v-if="scope.row.status === '4'"
-            link 
-            type="warning" 
-            icon="Checked" 
+          <!-- 确认收货按钮：仅状态7显示 (归还中) -->
+          <el-button
+            v-if="scope.row.status === '7'"
+            link
+            type="warning"
+            icon="Checked"
             @click="handleConfirmReturn(scope.row)"
           >确认收货</el-button>
-
+          
+          <!-- 退款审核按钮：仅状态5显示 (退款审核中) -->
+          <template v-if="scope.row.status === '5'">
+            <el-button
+              link type="success" icon="Check"
+              @click="handleAudit(scope.row, true)"
+            >同意退款</el-button>
+            <el-button
+              link type="danger" icon="Close"
+              @click="handleAudit(scope.row, false)"
+            >拒绝退款</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -93,7 +107,7 @@
 import { listShopOrder, getShopOrder, delShopOrder, addShopOrder, updateShopOrder } from "@/api/system/ShopOrder";
 import request from '@/utils/request';
 import { ElMessage, ElMessageBox } from 'element-plus';
-
+import { auditRefund } from "@/api/system/ShopOrder";
 const { proxy } = getCurrentInstance();
 
 const shopOrderList = ref([]);
@@ -125,11 +139,30 @@ const data = reactive({
 const { queryParams, form, rules } = toRefs(data);
 
 function statusText(status) {
-  const map = {'0':'待支付', '1':'待发货', '2':'进行中', '3':'已完成', '4':'归还中'};
+  const map = {
+    '0': '待支付',
+    '1': '待发货',
+    '2': '进行中',
+    '3': '已完成',
+    '4': '已取消',
+    '5': '退款审核中',
+    '6': '已退款',
+    '7': '归还中'
+  };
   return map[status] || status;
 }
+
 function statusType(status) {
-  const map = {'0':'danger', '1':'warning', '2':'primary', '3':'success', '4':'info'};
+  const map = {
+    '0': 'danger',
+    '1': 'warning',
+    '2': 'primary',
+    '3': 'success',
+    '4': 'info',
+    '5': 'warning',
+    '6': 'info',
+    '7': 'info'
+  };
   return map[status] || '';
 }
 
@@ -212,6 +245,16 @@ function handleExport() {
     ...queryParams.value
   }, `shop_order_${new Date().getTime()}.xlsx`)
 }
-
+// 审核处理函数
+function handleAudit(row, pass) {
+  const actionText = pass ? "同意退款" : "拒绝退款";
+  proxy.$modal.confirm(`确认要"${actionText}"订单 ${row.orderNo} 吗？`).then(function() {
+    // 构造参数，注意这里传给后端的对象结构
+    return auditRefund({ orderId: row.orderId, pass: pass });
+  }).then(() => {
+    proxy.$modal.msgSuccess("操作成功");
+    getList();
+  }).catch(() => {});
+}
 getList();
 </script>

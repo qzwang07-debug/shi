@@ -42,3 +42,12 @@ export function delShopOrder(orderId) {
     method: 'delete'
   })
 }
+
+// 审核退款
+export function auditRefund(data) {
+  return request({
+    url: '/merchant/order/auditRefund',
+    method: 'post',
+    data: data
+  })
+}

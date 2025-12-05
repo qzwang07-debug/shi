@@ -265,7 +265,7 @@ const realStock = computed(() => {
   if (!product.value) return 0;
   if (isRent.value) {
     // 租赁模式：看 availableRent (可租赁数量)
-    return product.value.availableRent || 0;
+    return product.value.stockQuantity || 0;
   } else {
     // 出售模式 (类型 '2')：看 stockQuantity (库存)
     return product.value.stockQuantity || 0;

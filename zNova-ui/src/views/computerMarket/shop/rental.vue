@@ -176,9 +176,9 @@
             <div class="product-body">
               <div class="title-section">
                 <h3 class="product-name" :title="product.productName">{{ product.productName }}</h3>
-                <div class="stock-badge" :class="{ 'low-stock': product.availableRent < 3 }">
-                  {{ product.availableRent > 0 ? `余 ${product.availableRent}` : '缺货' }}
-                </div>
+                <div class="stock-badge" :class="{ 'low-stock': product.stockQuantity < 3 }">
+                  {{ product.stockQuantity > 0 ? `余 ${product.stockQuantity}` : '缺货' }}
+              </div>
               </div>
 
               <!-- 性能条 -->
@@ -229,9 +229,9 @@
                   class="action-btn rent-btn"
                   icon="ShoppingCart"
                   @click="addToCart(product, 'rent')"
-                  :disabled="!product.availableRent"
+                  :disabled="!product.stockQuantity"
                 >
-                  {{ product.availableRent ? '立即租赁' : '暂时缺货' }}
+                  {{ product.stockQuantity ? '立即租赁' : '暂时缺货' }}
                 </el-button>
               </div>
             </div>

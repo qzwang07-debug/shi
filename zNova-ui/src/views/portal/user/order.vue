@@ -95,22 +95,36 @@
           </div>
           <div class="action-btns">
             <el-button v-if="order.status == '0'" type="danger" size="small" @click="handlePay(order)">去支付</el-button>
+
+            <el-button
+              v-if="order.status === '0'"
+              link type="danger" icon="Close"
+              @click="handleCancel(order)"
+            >取消支付</el-button>
+
+            <el-button
+              v-if="order.status === '1'"
+              link type="warning" icon="RefreshLeft"
+              @click="handleRefundApply(order)"
+            >申请退款</el-button>
+
             
+
             <!-- 购买且已发货 -> 确认收货 -->
-            <el-button 
-                v-if="order.status == '2' && !isRentOrder(order)" 
-                type="primary" size="small" 
+            <el-button
+                v-if="order.status == '2' && !isRentOrder(order)"
+                type="primary" size="small"
                 @click="handleConfirm(order)"
             >确认收货</el-button>
             
             <!-- 租赁且进行中 -> 申请归还 -->
-            <el-button 
-                v-if="order.status == '2' && isRentOrder(order)" 
-                type="warning" size="small" 
+            <el-button
+                v-if="order.status == '2' && isRentOrder(order)"
+                type="warning" size="small"
                 @click="handleReturn(order)"
             >申请归还</el-button>
             
-            <el-button v-if="order.status == '4'" type="info" plain size="small" disabled>归还中(待商家确认)</el-button>
+            <el-button v-if="order.status == '7'" type="info" plain size="small" disabled>归还中(待商家确认)</el-button>
           </div>
         </div>
       </el-card>
@@ -145,7 +159,8 @@ import request from '@/utils/request';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { parseTime } from '@/utils/ruoyi';
 import Header from '@/views/computerMarket/Header.vue';
-
+import { listOrder, cancelOrder, applyRefund } from "@/api/portal/order"; // 假设你有对应的API文件
+import { getCurrentInstance} from "vue";
 const router = useRouter();
 const route = useRoute();
 const loading = ref(false);
@@ -153,6 +168,7 @@ const orderList = ref([]);
 const total = ref(0);
 const activeTab = ref('all');
 const commentOpen = ref(false);
+const { proxy } = getCurrentInstance();
 
 const queryParams = reactive({
   pageNum: 1,
@@ -167,11 +183,29 @@ const commentForm = reactive({
   content: ''
 });
 
-const statusTypeMap = { '0':'danger', '1':'warning', '2':'primary', '3':'success', '4':'info' };
+const statusTypeMap = {
+  '0':'danger',
+  '1':'warning',
+  '2':'primary',
+  '3':'success',
+  '4':'info',
+  '5': 'warning',
+  '6': 'info',
+  '7': 'info'
+};
 
 // 辅助函数：获取状态文本
 function statusText(status) {
-  const map = { '0':'待支付', '1':'待发货', '2':'进行中', '3':'已完成', '4':'归还中' };
+  const map = {
+    '0':'待支付',
+    '1':'待发货',
+    '2':'进行中',
+    '3':'已完成',
+    '4':'已取消',
+    '5': '退款审核中',
+    '6': '已退款',
+    '7': '归还中'
+  };
   return map[String(status)] || status;
 }
 
@@ -272,7 +306,25 @@ function submitComment() {
     console.error('【前端评论】提交失败:', error);
   });
 }
+// 取消支付 (用户端取消订单)
+function handleCancel(order) {
+  proxy.$modal.confirm('确认要取消该订单吗？').then(function() {
+    return cancelOrder({ orderId: order.orderId }); 
+  }).then(() => {
+    proxy.$modal.msgSuccess("取消成功");
+    getList(); // 刷新列表
+  }).catch(() => {});
+}
 
+// 申请退款
+function handleRefundApply(order) {
+  proxy.$modal.confirm('确认要申请退款吗？').then(function() {
+    return applyRefund({ orderId: order.orderId });
+  }).then(() => {
+    proxy.$modal.msgSuccess("申请提交成功，请等待审核");
+    getList();
+  }).catch(() => {});
+}
 onMounted(() => {
   // 从路由参数中获取activeTab
   const tabIndex = route.query.activeTab;
@@ -301,4 +353,5 @@ onMounted(() => {
 .item-action { margin-left: 15px; } /* 确保按钮有间距 */
 .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
 .price-text { color: #f56c6c; font-size: 18px; font-weight: bold; }
+
 </style>

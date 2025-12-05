@@ -2,6 +2,7 @@ package com.zNova.system.mapper;
 
 import java.util.List;
 import com.zNova.system.domain.BizProduct;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 商品Mapper接口
@@ -65,5 +66,21 @@ public interface BizProductMapper
      * @param bizProduct 商品
      * @return 商品集合
      */
-    public List<BizProduct> selectBizProductListWithMerchantName(BizProduct bizProduct);
+    public List<BizProduct>selectBizProductListWithDeptName (BizProduct bizProduct);
+// selectBizProductListWithMerchantName
+    /**
+     * 扣减库存（原子操作，防止超卖）
+     * @param id 商品ID
+     * @param quantity 扣减数量
+     * @return 更新行数
+     */
+    public int decreaseStock(@Param("id") Long id, @Param("quantity") Long quantity);
+
+    /**
+     * 增加库存（回滚库存）
+     * @param id 商品ID
+     * @param quantity 增加数量
+     * @return 更新行数
+     */
+    public int increaseStock(@Param("id") Long id, @Param("quantity") Long quantity);
 }

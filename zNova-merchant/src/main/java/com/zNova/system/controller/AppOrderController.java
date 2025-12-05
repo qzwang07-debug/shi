@@ -77,12 +77,7 @@ public class AppOrderController extends BaseController
                         userId, product.getProductName(), itemReq.getQuantity(), product.getStockQuantity());
                 throw new RuntimeException("商品 [" + product.getProductName() + "] 库存不足");
             }
-            // 租赁模式下的额外库存校验
-            if ("1".equals(itemReq.getBusinessType()) && itemReq.getQuantity() > product.getAvailableRent()) {
-                logger.warn("用户 {} 创建订单时商品 [{}] 可租赁数量不足，需求: {}, 实际: {}",
-                        userId, product.getProductName(), itemReq.getQuantity(), product.getAvailableRent());
-                throw new RuntimeException("商品 [" + product.getProductName() + "] 可租赁数量不足");
-            }
+
 
             // 构建订单明细对象
             ShopOrderItem orderItem = new ShopOrderItem();
@@ -300,7 +295,7 @@ public class AppOrderController extends BaseController
     }
     /**
      * 申请归还 (租赁业务)
-     * 状态流转: 2(租赁中) -> 4(归还中)
+     * 状态流转: 2(租赁中) -> 7(归还中)
      */
     @PutMapping("/return/{orderId}")
     public AjaxResult returnOrder(@PathVariable Long orderId)
@@ -322,11 +317,28 @@ public class AppOrderController extends BaseController
             return error("非租赁订单，请直接确认收货");
         }
 
-        order.setStatus("4"); // 4=归还中
+        order.setStatus("7"); // 7=归还中
         shopOrderService.updateShopOrder(order);
         return success();
     }
+    /**
+     * 用户取消订单
+     */
+    @PostMapping("/cancel")
+    public AjaxResult cancel(@RequestBody ShopOrder order) {
+        // 建议在Service层加校验：确保该订单属于当前用户
+        shopOrderService.userCancelOrder(order.getOrderId());
+        return success();
+    }
 
+    /**
+     * 用户申请退款
+     */
+    @PostMapping("/applyRefund")
+    public AjaxResult applyRefund(@RequestBody ShopOrder order) {
+        shopOrderService.userApplyRefund(order.getOrderId());
+        return success();
+    }
     // ================= 内部 DTO 类 =================
 
     /** 订单创建请求体 */
