@@ -1,9 +1,14 @@
 package com.zNova.system.controller;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+
+import cn.xuyanwu.spring.file.storage.FileInfo;
+import cn.xuyanwu.spring.file.storage.FileStorageService;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.zNova.common.config.RuoYiConfig;
@@ -50,6 +55,9 @@ public class AppUserController
 
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     /**
      * C端用户登录
@@ -214,8 +222,15 @@ public class AppUserController
             AppUser user = (AppUser) userObj;
 
             try {
-                // 调用文件上传服务
-                String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file);
+                // 使用 FileStorageService 上传到阿里云 OSS (无需手动拼接路径，插件会处理)
+                // 这里的 setPath 是相对路径，例如 "avatar/"
+                String objectPath = "avatar/" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/";
+
+                FileInfo fileInfo = fileStorageService.of(file)
+                        .setPath(objectPath)
+                        .upload();
+
+                String avatar = fileInfo.getUrl();
 
                 // 更新用户头像
                 user.setAvatar(avatar);

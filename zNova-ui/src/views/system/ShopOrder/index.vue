@@ -100,6 +100,64 @@
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
+    
+    <!-- 订单详情弹窗 -->
+    <el-dialog title="订单详情" v-model="detailOpen" width="600px" append-to-body>
+      <el-form v-loading="detailLoading" label-width="100px">
+        <!-- 用户信息 -->
+        <el-divider content-position="left">用户信息</el-divider>
+        <el-form-item label="用户账号：">
+          <span>{{ detailForm.user?.username || '-' }}</span>
+        </el-form-item>
+        <el-form-item label="用户昵称：">
+          <span>{{ detailForm.user?.nickname || '-' }}</span>
+        </el-form-item>
+
+        <!-- 收货地址信息 -->
+        <el-divider content-position="left">收货地址</el-divider>
+        <template v-if="!addressEditMode">
+          <el-form-item label="收货人：">
+            <span>{{ detailForm.order?.receiverName || '-' }}</span>
+          </el-form-item>
+          <el-form-item label="联系电话：">
+            <span>{{ detailForm.order?.receiverPhone || '-' }}</span>
+          </el-form-item>
+          <el-form-item label="收货地址：">
+            <span>{{ detailForm.order?.receiverAddress || '-' }}</span>
+          </el-form-item>
+        </template>
+        
+        <template v-else>
+          <el-form-item label="收货人：">
+            <el-input v-model="detailForm.order.receiverName" placeholder="请输入收货人姓名" />
+          </el-form-item>
+          <el-form-item label="联系电话：">
+            <el-input v-model="detailForm.order.receiverPhone" placeholder="请输入联系电话" />
+          </el-form-item>
+          <el-form-item label="收货地址：">
+            <el-input
+              v-model="detailForm.order.receiverAddress"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入详细收货地址"
+            />
+          </el-form-item>
+        </template>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <template v-if="!addressEditMode">
+            <el-button type="primary" @click="addressEditMode = true">修改地址</el-button>
+            <el-button @click="detailOpen = false">关 闭</el-button>
+          </template>
+          <template v-else>
+            <el-button type="primary" @click="saveAddress">保 存</el-button>
+            <el-button @click="cancelAddressEdit">取 消</el-button>
+          </template>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -107,11 +165,12 @@
 import { listShopOrder, getShopOrder, delShopOrder, addShopOrder, updateShopOrder } from "@/api/system/ShopOrder";
 import request from '@/utils/request';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { auditRefund } from "@/api/system/ShopOrder";
+import { auditRefund, getOrderDetail, updateAddress } from "@/api/system/ShopOrder";
 const { proxy } = getCurrentInstance();
 
 const shopOrderList = ref([]);
 const open = ref(false);
+const detailOpen = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
 const ids = ref([]);
@@ -119,6 +178,12 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+const detailLoading = ref(false);
+const detailForm = ref({
+  order: {},
+  user: {}
+});
+const addressEditMode = ref(false);
 
 const data = reactive({
   form: {},
@@ -202,7 +267,45 @@ function handleSelectionChange(selection) {
 
 /** 详情 */
 function handleDetail(row) {
-  proxy.$alert("功能开发中，订单ID：" + row.orderId);
+  detailOpen.value = true;
+  detailLoading.value = true;
+  addressEditMode.value = false;
+  
+  getOrderDetail(row.orderId).then(response => {
+    detailForm.value = {
+      order: response.data.order || {},
+      user: response.data.user || {}
+    };
+    detailLoading.value = false;
+  }).catch(() => {
+    detailLoading.value = false;
+    ElMessage.error("获取订单详情失败");
+  });
+}
+
+/** 保存地址修改 */
+function saveAddress() {
+  const orderData = {
+    orderId: detailForm.value.order.orderId,
+    receiverName: detailForm.value.order.receiverName,
+    receiverPhone: detailForm.value.order.receiverPhone,
+    receiverAddress: detailForm.value.order.receiverAddress
+  };
+  
+  updateAddress(orderData).then(() => {
+    ElMessage.success("地址修改成功");
+    addressEditMode.value = false;
+    getList(); // 刷新列表
+  }).catch(() => {
+    ElMessage.error("地址修改失败");
+  });
+}
+
+/** 取消地址编辑 */
+function cancelAddressEdit() {
+  addressEditMode.value = false;
+  // 重新获取详情以恢复原始数据
+  handleDetail({ orderId: detailForm.value.order.orderId });
 }
 
 /** 发货操作 */

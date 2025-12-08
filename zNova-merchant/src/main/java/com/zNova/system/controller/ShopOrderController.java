@@ -156,4 +156,50 @@ public class ShopOrderController extends BaseController
         shopOrderService.adminAuditRefund(orderId, pass);
         return success();
     }
+
+    /**
+     * 获取订单详情（包含用户信息）
+     */
+    @GetMapping("/detail/{orderId}")
+    public AjaxResult getOrderDetail(@PathVariable("orderId") Long orderId) {
+        ShopOrder order = shopOrderService.selectShopOrderByOrderId(orderId);
+        if (order == null) {
+            return error("订单不存在");
+        }
+
+        // 校验权限
+        checkOrderPermission(order);
+
+        // 获取用户信息
+        com.zNova.common.core.domain.entity.AppUser user = shopOrderService.selectAppUserByUserId(order.getUserId());
+
+        JSONObject result = new JSONObject();
+        result.put("order", order);
+        result.put("user", user);
+
+        return AjaxResult.success(result);
+    }
+
+    /**
+     * 修改收货地址
+     */
+    @Log(title = "修改收货地址", businessType = BusinessType.UPDATE)
+    @PutMapping("/updateAddress")
+    public AjaxResult updateAddress(@RequestBody ShopOrder shopOrder) {
+        ShopOrder order = shopOrderService.selectShopOrderByOrderId(shopOrder.getOrderId());
+        if (order == null) {
+            return error("订单不存在");
+        }
+
+        // 校验权限
+        checkOrderPermission(order);
+
+        // 更新收货地址信息
+        order.setReceiverName(shopOrder.getReceiverName());
+        order.setReceiverPhone(shopOrder.getReceiverPhone());
+        order.setReceiverAddress(shopOrder.getReceiverAddress());
+
+        shopOrderService.updateShopOrder(order);
+        return success();
+    }
 }

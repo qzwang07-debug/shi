@@ -51,3 +51,20 @@ export function auditRefund(data) {
     data: data
   })
 }
+
+// 获取订单详情（包含用户信息）
+export function getOrderDetail(orderId) {
+  return request({
+    url: '/merchant/order/detail/' + orderId,
+    method: 'get'
+  })
+}
+
+// 修改收货地址
+export function updateAddress(data) {
+  return request({
+    url: '/merchant/order/updateAddress',
+    method: 'put',
+    data: data
+  })
+}

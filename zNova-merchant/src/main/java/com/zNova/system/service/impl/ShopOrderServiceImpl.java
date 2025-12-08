@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.zNova.system.domain.ShopOrderItem;
 import com.zNova.system.mapper.ShopOrderMapper;
 import com.zNova.system.domain.ShopOrder;
+import com.zNova.system.mapper.AppUserMapper;
 import com.zNova.system.service.IShopOrderService;
 
 /**
@@ -29,6 +30,9 @@ public class ShopOrderServiceImpl implements IShopOrderService
 
     @Autowired
     private BizProductMapper bizProductMapper;
+
+    @Autowired
+    private AppUserMapper appUserMapper;
     // 状态常量定义
     private static final String STATUS_WAIT_PAY = "0";      // 待支付
     private static final String STATUS_PAID = "1";          // 待发货
@@ -267,6 +271,17 @@ public class ShopOrderServiceImpl implements IShopOrderService
                 shopOrderMapper.batchShopOrderItem(list);
             }
         }
+    }
+
+    /**
+     * 根据用户ID查询用户信息
+     * @param userId 用户ID
+     * @return 用户信息
+     */
+    @Override
+    public com.zNova.common.core.domain.entity.AppUser selectAppUserByUserId(Long userId)
+    {
+        return appUserMapper.selectAppUserByUserId(userId);
     }
 
 }

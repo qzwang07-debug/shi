@@ -1,260 +1,399 @@
 <template>
   <div class="common-layout">
-    <el-container class="app-container">
-      <!-- 导入的头部导航栏组件 -->
-      <Header />
-      
-      <!-- 主要内容区域 -->
-      <el-main class="main-content">
-        <div class="portal-login">
-          <div class="login-container">
-            <h2 class="login-title">C端用户登录</h2>
-      <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form">
-        <el-form-item prop="username">
-          <el-input
-            v-model="loginForm.username"
-            type="text"
-            size="large"
-            auto-complete="off"
-            placeholder="请输入用户名"
-          >
-            <template #prefix>
-              <svg-icon icon-class="user" class="el-input__icon input-icon" />
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input
-            v-model="loginForm.password"
-            type="password"
-            size="large"
-            auto-complete="off"
-            placeholder="请输入密码"
-            @keyup.enter="handleLogin"
-          >
-            <template #prefix>
-              <svg-icon icon-class="password" class="el-input__icon input-icon" />
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item prop="code" v-if="captchaEnabled">
-          <el-input
-            v-model="loginForm.code"
-            size="large"
-            auto-complete="off"
-            placeholder="验证码"
-            style="width: 63%"
-            @keyup.enter="handleLogin"
-          >
-            <template #prefix>
-              <svg-icon icon-class="validCode" class="el-input__icon input-icon" />
-            </template>
-          </el-input>
-          <div class="login-code">
-            <img :src="codeUrl" @click="getCode" class="login-code-img"/>
+    
+    
+    <div class="main-content">
+      <!-- 登录区域包裹层 -->
+      <div class="login-wrapper">
+        <!-- 登录卡片 -->
+        <div class="login-box glass-effect">
+          <div class="login-header">
+            <h2 class="title">欢迎回来</h2>
+            <p class="subtitle">登录您的 新星 账号</p>
           </div>
-        </el-form-item>
-        <el-form-item style="width:100%;">
-          <el-button
-            :loading="loading"
-            size="large"
-            type="primary"
-            style="width:100%;"
-            @click.prevent="handleLogin"
-          >
-            <span v-if="!loading">登 录</span>
-            <span v-else>登 录 中...</span>
-          </el-button>
-          <div style="float: right;" v-if="register">
-            <router-link class="link-type" :to="'/portal/register'">立即注册</router-link>
-          </div>
-          <div style="float: left;">
-            <router-link class="link-type" :to="'/login'">商家登录</router-link>
-          </div>
-        </el-form-item>
-      </el-form>
-          </div>
+
+          <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
+            <el-form-item prop="username">
+              <el-input
+                v-model="loginForm.username"
+                type="text"
+                size="large"
+                placeholder="请输入账号"
+                class="custom-input"
+              >
+                <template #prefix>
+                  <el-icon class="input-icon"><User /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+
+            <el-form-item prop="password">
+              <el-input
+                v-model="loginForm.password"
+                type="password"
+                size="large"
+                placeholder="请输入密码"
+                show-password
+                class="custom-input"
+                @keyup.enter="handleLogin"
+              >
+                <template #prefix>
+                  <el-icon class="input-icon"><Lock /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+
+            <el-form-item prop="code" v-if="captchaEnabled">
+              <div class="captcha-row">
+                <el-input
+                  v-model="loginForm.code"
+                  size="large"
+                  placeholder="验证码"
+                  class="custom-input captcha-input"
+                  @keyup.enter="handleLogin"
+                >
+                  <template #prefix>
+                    <el-icon class="input-icon"><Key /></el-icon>
+                  </template>
+                </el-input>
+                <div class="captcha-img-box" @click="getCode">
+                  <img v-if="codeUrl" :src="codeUrl" class="login-code-img" title="点击切换验证码" />
+                  <div v-else class="img-placeholder">加载中...</div>
+                </div>
+              </div>
+            </el-form-item>
+
+            <el-form-item class="btn-row">
+              <el-button
+                :loading="loading"
+                size="large"
+                type="primary"
+                class="login-btn"
+                @click.prevent="handleLogin"
+                round
+              >
+                <span v-if="!loading">立即登录</span>
+                <span v-else>登 录 中...</span>
+              </el-button>
+            </el-form-item>
+
+            <div class="form-footer">
+              <router-link class="link-btn" :to="'/login'">
+                <el-icon><Shop /></el-icon> 商家登录
+              </router-link>
+              <el-divider direction="vertical" />
+              <router-link class="link-btn highlight" :to="'/portal/register'">
+                注册新账号 <el-icon><ArrowRight /></el-icon>
+              </router-link>
+            </div>
+          </el-form>
         </div>
-      </el-main>
-    </el-container>
+      </div>
+    </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, reactive, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { User, Lock, Key, Shop, ArrowRight } from '@element-plus/icons-vue';
 import { getCodeImg } from "@/api/login";
 import { appLogin } from "@/api/appLogin";
-import Cookies from "js-cookie";
-import { encrypt, decrypt } from '@/utils/jsencrypt'
 import { setAppToken } from "@/utils/auth";
-import Header from '@/views/computerMarket/Header.vue'; 
 
-export default {
-  name: "PortalLogin",
-  components: {
-    Header
-  },
-  data() {
-    return {
-      codeUrl: "",
-      loginForm: {
-        username: "",
-        password: "",
-        rememberMe: false,
-        code: "",
-        uuid: ""
-      },
-      loginRules: {
-        username: [
-          { required: true, trigger: "blur", message: "请输入您的账号" }
-        ],
-        password: [
-          { required: true, trigger: "blur", message: "请输入您的密码" }
-        ],
-        code: [{ required: true, trigger: "change", message: "请输入验证码" }]
-      },
-      loading: false,
-      // 验证码开关
-      captchaEnabled: true,
-      // 注册开关
-      register: true,
-      redirect: undefined
-    };
-  },
-  watch: {
-    $route: {
-      handler: function(route) {
-        this.redirect = route.query && route.query.redirect;
-      },
-      immediate: true
-    }
-  },
-  created() {
-    this.getCode();
-  },
-  methods: {
-    getCode() {
-      getCodeImg().then(res => {
-        this.captchaEnabled = res.captchaEnabled === undefined ? true : res.captchaEnabled;
-        if (this.captchaEnabled) {
-          this.codeUrl = "data:image/gif;base64," + res.img;
-          this.loginForm.uuid = res.uuid;
-        }
-      });
-    },
-    handleLogin() {
-      console.log('登录按钮被点击');
-      this.$refs.loginForm.validate(valid => {
-        if (valid) {
-          console.log('表单验证通过');
-          this.loading = true;
-          appLogin(this.loginForm.username, this.loginForm.password, this.loginForm.code, this.loginForm.uuid).then(res => {
-            console.log('登录成功:', res);
-            // 存储C端token
-            setAppToken(res.token);
-            console.log("登录成功，保存token到localStorage:", res.token);
-            
-            // 验证token是否保存成功
-            const savedToken = localStorage.getItem('app_token');
-            console.log("验证保存的token:", savedToken);
-            
-            this.$message.success('登录成功');
-            console.log('准备跳转到:', this.redirect || "/computer-market");
-            this.$router.push({ path: this.redirect || "/computer-market" }).then(() => {
-              console.log('跳转成功');
-            }).catch(err => {
-              console.error('跳转失败:', err);
-            });
-          }).catch(err => {
-            console.error('登录失败:', err);
-            this.loading = false;
-            if (this.captchaEnabled) {
-              this.getCode();
-            }
-            // 显示错误提示
-            if (err && err.message) {
-              this.$message.error(err.message);
-            } else {
-              this.$message.error('登录失败，请检查用户名和密码');
-            }
-          });
-        } else {
-          console.log('表单验证失败');
-          this.$message.error('请填写完整的登录信息');
-        }
-      });
-    }
-  }
+
+const router = useRouter();
+const route = useRoute();
+const loginRef = ref(null);
+
+// 数据状态
+const codeUrl = ref("");
+const loading = ref(false);
+const captchaEnabled = ref(true);
+const redirect = ref(undefined);
+
+const loginForm = reactive({
+  username: "",
+  password: "",
+  code: "",
+  uuid: ""
+});
+
+const loginRules = {
+  username: [{ required: true, trigger: "blur", message: "请输入您的账号" }],
+  password: [{ required: true, trigger: "blur", message: "请输入您的密码" }],
+  code: [{ required: true, trigger: "change", message: "请输入验证码" }]
 };
+
+// 监听路由变化
+watch(() => route.query, (query) => {
+  redirect.value = query && query.redirect;
+}, { immediate: true });
+
+// 获取验证码
+const getCode = () => {
+  getCodeImg().then(res => {
+    captchaEnabled.value = res.captchaEnabled === undefined ? true : res.captchaEnabled;
+    if (captchaEnabled.value) {
+      codeUrl.value = "data:image/gif;base64," + res.img;
+      loginForm.uuid = res.uuid;
+    }
+  });
+};
+
+// 登录逻辑
+const handleLogin = () => {
+  loginRef.value.validate(valid => {
+    if (valid) {
+      loading.value = true;
+      appLogin(loginForm.username, loginForm.password, loginForm.code, loginForm.uuid)
+        .then(res => {
+          setAppToken(res.token);
+          ElMessage.success('登录成功，欢迎回来');
+          router.push({ path: redirect.value || "/computer-market" });
+        })
+        .catch(err => {
+          console.error(err);
+          loading.value = false;
+          if (captchaEnabled.value) {
+            getCode();
+          }
+        });
+    }
+  });
+};
+
+onMounted(() => {
+  getCode();
+});
 </script>
 
-<style rel="stylesheet/scss" lang="scss" scoped>
-/* 布局样式 */
-.common-layout {
-  min-height: 100vh;
-}
-
-.app-container {
-  background-color: #FAFAF8;
-  color: #000000;
+<style scoped lang="scss">
+/* 基础布局 */
+.common-layout, .app-container {
   min-height: 100vh;
 }
 
 .main-content {
-  background-color: #FAFAF8;
-  padding: 20px;
-  margin-top: 70px; /* 为固定导航栏留出空间 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  padding: 0;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.portal-login {
+.login-wrapper {
+  width: 100%;
+  height: 100%;
+  /* 设置背景图 */
+  background-image: url("@/assets/images/computer1.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
+  /* Flex布局使登录框居右 */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* 靠右对齐 */
+  padding-right: 10%; /* 距离右侧的距离 */
+  position: relative;
+}
+
+/* 增加背景遮罩，提升文字可读性 */
+.login-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1); /* 极淡的遮罩 */
+  z-index: 1;
+}
+
+/* 磨砂玻璃卡片 */
+.login-box {
+  position: relative;
+  z-index: 10;
+  width: 420px;
+  padding: 40px;
+  border-radius: 20px;
+  
+  /* 磨砂玻璃核心代码 */
+  background: rgba(255, 255, 255, 0.75); /* 白色半透明 */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  
+  animation: slideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes slideIn {
+  0% { transform: translateX(50px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* 头部文字 */
+.login-header {
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 0;
+}
+
+/* 表单样式优化 */
+.custom-input {
+  --el-input-bg-color: rgba(255, 255, 255, 0.6);
+  --el-input-border-color: transparent;
+  --el-input-hover-border-color: transparent;
+  --el-input-focus-border-color: transparent;
+  
+  height: 48px;
+  font-size: 15px;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 12px;
+  box-shadow: none !important;
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  padding-left: 15px;
+}
+
+:deep(.el-input__wrapper:hover),
+:deep(.el-input__wrapper.is-focus) {
+  background-color: #fff;
+  border-color: #626aef;
+  box-shadow: 0 4px 12px rgba(98, 106, 239, 0.1) !important;
+}
+
+.input-icon {
+  font-size: 18px;
+  color: #909399;
+}
+
+/* 验证码行 */
+.captcha-row {
+  display: flex;
+  gap: 15px;
+}
+
+.captcha-input {
+  flex: 1;
+}
+
+.captcha-img-box {
+  width: 120px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.captcha-img-box:hover {
+  transform: scale(1.02);
+  border-color: #626aef;
+}
+
+.login-code-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.img-placeholder {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 按钮行 */
+.btn-row {
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.login-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #626aef 0%, #a0cfff 100%);
+  border: none;
+  box-shadow: 0 4px 15px rgba(98, 106, 239, 0.35);
+  transition: all 0.3s;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(98, 106, 239, 0.45);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+/* 底部链接 */
+.form-footer {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
-  height: 100%;
-  background-image: url("@/assets/images/login-background.jpg");
-  background-size: cover;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  gap: 15px;
+  font-size: 14px;
 }
-.login-container {
-  width: 400px;
-  padding: 30px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+.link-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #606266;
+  text-decoration: none;
+  transition: color 0.3s;
 }
-.login-title {
-  margin: 0 auto 30px auto;
-  text-align: center;
-  color: #707070;
+
+.link-btn:hover {
+  color: #303133;
 }
-.login-form {
-  .el-input {
-    height: 38px;
-    input {
-      height: 38px;
-    }
+
+.link-btn.highlight {
+  color: #626aef;
+  font-weight: 500;
+}
+
+.link-btn.highlight:hover {
+  color: #409eff;
+}
+
+/* 响应式调整 */
+@media screen and (max-width: 768px) {
+  .login-wrapper {
+    justify-content: center;
+    padding-right: 0;
   }
-  .input-icon {
-    height: 39px;
-    width: 14px;
-    margin-left: 2px;
+  
+  .login-box {
+    width: 90%;
+    margin: 0 20px;
   }
-}
-.login-code {
-  width: 33%;
-  height: 38px;
-  float: right;
-  img {
-    cursor: pointer;
-    vertical-align: middle;
-  }
-}
-.login-code-img {
-  height: 38px;
 }
 </style>

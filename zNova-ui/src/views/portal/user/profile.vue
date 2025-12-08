@@ -1,231 +1,248 @@
 <template>
   <div class="common-layout">
-    <el-container class="app-container">
-      <!-- 导入的头部导航栏组件 -->
-      <Header />
-      
-      <!-- 主要内容区域 -->
-      <el-main class="main-content">
-        <div class="profile-container">
-          <!-- 头部信息区域 -->
-          <el-card class="profile-header" shadow="hover">
-      <div class="header-content">
-        <!-- 左侧：头像 -->
-        <div class="avatar-section">
-          <el-upload
-            class="avatar-uploader"
-            action="/app/user/avatar"
-            :headers="{ 'App-Token': appToken }"
-            :show-file-list="false"
-            :on-success="handleAvatarSuccess"
-            :before-upload="beforeAvatarUpload"
-          >
-            <img v-if="userInfo.avatar" :src="userAvatar" @error="handleAvatarError" class="avatar" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-          <div class="avatar-hint">点击更换头像</div>
-        </div>
+    <Header />
+    
+    <div class="main-content">
+      <div class="dashboard-container">
         
-        <!-- 中间：用户基本信息 -->
-        <div class="user-info-section">
-          <div class="user-main-info">
-            <h2 class="nickname">{{ userInfo.nickname || '未设置昵称' }}</h2>
-            <span class="username">账号：{{ userInfo.username }}</span>
-            <el-tag type="success" size="small" class="auth-tag">已实名认证</el-tag>
-          </div>
-          <div class="user-detail-info">
-            <div class="info-item">
-              <el-icon><Phone /></el-icon>
-              <span>{{ userInfo.phonenumber || '未设置手机号' }}</span>
+        <!-- 顶部：个人信息主卡片 -->
+        <div class="profile-card">
+          <div class="profile-bg"></div>
+          <div class="profile-body">
+            <!-- 头像区域 -->
+            <div class="avatar-wrapper">
+              <el-upload
+                class="avatar-uploader"
+                :action="uploadImgUrl"
+                :headers="{ 'Authorization': 'Bearer ' + appToken }"
+                :show-file-list="false"
+                :on-success="handleAvatarSuccess"
+                :before-upload="beforeAvatarUpload"
+              >
+                <div class="avatar-box">
+                  <img v-if="userInfo.avatar" :src="userAvatar" @error="handleAvatarError" class="avatar-img" />
+                  <div v-else class="avatar-placeholder">{{ userInfo.nickname ? userInfo.nickname.charAt(0) : 'U' }}</div>
+                  <!-- 悬浮遮罩 -->
+                  <div class="avatar-mask">
+                    <el-icon><Camera /></el-icon>
+                  </div>
+                </div>
+              </el-upload>
             </div>
-            <div class="info-item">
-              <el-icon><User /></el-icon>
-              <span>{{ userInfo.sex === '0' ? '男' : userInfo.sex === '1' ? '女' : '未知' }}</span>
+
+            <!-- 信息区域 -->
+            <div class="info-wrapper">
+              <div class="name-row">
+                <h2 class="nickname">{{ userInfo.nickname || '极客用户' }}</h2>
+                <el-tag effect="dark" round size="small" color="#626aef" class="level-tag">
+                  <el-icon><Trophy /></el-icon> Lv.{{ userLevel }}
+                </el-tag>
+              </div>
+              <div class="id-row">
+                <span>账号 ID: {{ userInfo.username }}</span>
+                <el-divider direction="vertical" />
+                <span><el-icon><Iphone /></el-icon> {{ userInfo.phonenumber || '未绑定手机' }}</span>
+              </div>
+              <div class="join-row">
+                加入平台第 <span class="days">365</span> 天 <!-- 静态展示，增加归属感 -->
+              </div>
+            </div>
+
+            <!-- 数据概览 (替代余额和信用分) -->
+            <div class="stats-wrapper">
+              <!-- 信用/信誉展示 -->
+              <div class="stat-item">
+                <div class="stat-chart">
+                  <el-progress 
+                    type="circle" 
+                    :percentage="creditPercentage" 
+                    :width="70" 
+                    :stroke-width="6"
+                    color="#67c23a"
+                  >
+                    <template #default>
+                      <span class="score-text">{{ userInfo.creditScore }}</span>
+                    </template>
+                  </el-progress>
+                </div>
+                <div class="stat-info">
+                  <div class="label">信誉极好</div>
+                  <div class="desc">极客信用分</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        
-        <!-- 右侧：信用分和余额 -->
-        <div class="credit-section">
-          <div class="credit-score">
-            <el-progress
-              type="dashboard"
-              :percentage="userInfo.creditScore || 700"
-              :color="creditColor"
-              :width="120"
-              :stroke-width="10"
-            >
-              <template #default>
-                <div class="progress-content">
-                  <div class="progress-text">信用分</div>
-                  <div class="progress-value">{{ userInfo.creditScore || 700 }}</div>
+
+        <!-- 下方内容区：左右分栏 -->
+        <div class="content-grid">
+          
+          <!-- 左侧：订单中心 -->
+          <div class="left-panel">
+            <el-card class="panel-card" shadow="hover">
+              <template #header>
+                <div class="panel-header">
+                  <span class="title">我的订单</span>
+                  <el-button link type="primary" @click="goToOrder('all')">查看全部 <el-icon><ArrowRight /></el-icon></el-button>
                 </div>
               </template>
-            </el-progress>
+              
+              <div class="order-nav">
+                <div class="nav-item" @click="goToOrder(0)">
+                  <div class="icon-box blue"><el-icon><Wallet /></el-icon></div>
+                  <span>待支付</span>
+                </div>
+                <div class="nav-item" @click="goToOrder(1)">
+                  <div class="icon-box orange"><el-icon><Box /></el-icon></div>
+                  <span>待发货</span>
+                </div>
+                <div class="nav-item" @click="goToOrder(2)">
+                  <div class="icon-box green"><el-icon><Van /></el-icon></div>
+                  <span>租赁/进行中</span>
+                </div>
+                <div class="nav-item" @click="goToOrder(3)">
+                  <div class="icon-box purple"><el-icon><CircleCheck /></el-icon></div>
+                  <span>已完成</span>
+                </div>
+              </div>
+            </el-card>
+
+            <!-- 可以在这里加一个“最近浏览”或“推荐”区域，丰富页面 -->
+            <el-card class="panel-card mt-20" shadow="hover">
+               <template #header><span class="title">专属服务</span></template>
+               <div class="banner-box">
+                 <div class="banner-text">
+                   <h3>以旧换新</h3>
+                   <p>闲置电脑高价回收，极速打款</p>
+                 </div>
+                 <el-button type="primary" size="small" round>立即估价</el-button>
+               </div>
+            </el-card>
           </div>
-          <div class="balance-info">
-            <div class="balance-label">账户余额</div>
-            <div class="balance-amount">¥{{ userInfo.balance || 0 }}</div>
+
+          <!-- 右侧：快捷设置 -->
+          <div class="right-panel">
+            <el-card class="panel-card" shadow="hover">
+              <template #header><span class="title">账户设置</span></template>
+              
+              <div class="settings-list">
+                <div class="setting-item" @click="openEditProfile">
+                  <div class="set-icon"><el-icon><EditPen /></el-icon></div>
+                  <div class="set-info">
+                    <div class="set-title">编辑资料</div>
+                    <div class="set-desc">修改昵称、联系方式</div>
+                  </div>
+                  <el-icon class="arrow"><ArrowRight /></el-icon>
+                </div>
+
+                <div class="setting-item" @click="router.push('/portal/user/address')">
+                  <div class="set-icon"><el-icon><LocationInformation /></el-icon></div>
+                  <div class="set-info">
+                    <div class="set-title">收货地址</div>
+                    <div class="set-desc">管理配送地址信息</div>
+                  </div>
+                  <el-icon class="arrow"><ArrowRight /></el-icon>
+                </div>
+
+                <div class="setting-item" @click="pwdDialogVisible = true">
+                  <div class="set-icon"><el-icon><Lock /></el-icon></div>
+                  <div class="set-info">
+                    <div class="set-title">安全中心</div>
+                    <div class="set-desc">修改登录密码</div>
+                  </div>
+                  <el-icon class="arrow"><ArrowRight /></el-icon>
+                </div>
+
+                <div class="setting-item logout" @click="handleLogout">
+                  <div class="set-icon logout-icon"><el-icon><SwitchButton /></el-icon></div>
+                  <div class="set-info">
+                    <div class="set-title">退出登录</div>
+                  </div>
+                </div>
+              </div>
+            </el-card>
           </div>
+
         </div>
+
+        <!-- 弹窗：编辑资料 -->
+        <el-dialog v-model="dialogVisible" title="修改个人信息" width="450px" align-center>
+          <el-form :model="editForm" label-width="80px" label-position="left">
+            <el-form-item label="昵称">
+              <el-input v-model="editForm.nickname" placeholder="请输入昵称" maxlength="10" show-word-limit />
+            </el-form-item>
+            <el-form-item label="手机号">
+              <el-input v-model="editForm.phonenumber" placeholder="请输入手机号" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="saveProfile">保存修改</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 弹窗：修改密码 -->
+        <el-dialog v-model="pwdDialogVisible" title="修改登录密码" width="450px" align-center>
+          <el-form :model="pwdForm" label-width="80px" :rules="pwdRules" ref="pwdFormRef" label-position="top">
+            <el-form-item label="当前密码" prop="oldPassword">
+              <el-input type="password" v-model="pwdForm.oldPassword" placeholder="请输入当前密码" show-password />
+            </el-form-item>
+            <el-form-item label="新密码" prop="newPassword">
+              <el-input type="password" v-model="pwdForm.newPassword" placeholder="请输入新密码 (6-20位)" show-password />
+            </el-form-item>
+            <el-form-item label="确认密码" prop="confirmPassword">
+              <el-input type="password" v-model="pwdForm.confirmPassword" placeholder="请再次输入新密码" show-password />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="pwdDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="savePassword">确认修改</el-button>
+          </template>
+        </el-dialog>
+
       </div>
-    </el-card>
-    
-    <!-- 订单快捷入口区域 -->
-    <el-card class="order-shortcuts" shadow="hover">
-      <h3 class="section-title">订单管理</h3>
-      <div class="shortcuts-grid">
-        <div class="shortcut-item" @click="goToOrder(0)">
-          <el-icon class="shortcut-icon"><Timer /></el-icon>
-          <div class="shortcut-text">待支付</div>
-        </div>
-        <div class="shortcut-item" @click="goToOrder(1)">
-          <el-icon class="shortcut-icon"><Van /></el-icon>
-          <div class="shortcut-text">待发货</div>
-        </div>
-        <div class="shortcut-item" @click="goToOrder(2)">
-          <el-icon class="shortcut-icon"><Box /></el-icon>
-          <div class="shortcut-text">租赁中</div>
-        </div>
-        <div class="shortcut-item" @click="goToOrder(3)">
-          <el-icon class="shortcut-icon"><List /></el-icon>
-          <div class="shortcut-text">全部订单</div>
-        </div>
-      </div>
-    </el-card>
-    
-    <!-- 功能列表区域 -->
-    <el-card class="function-list" shadow="hover">
-      <h3 class="section-title">账户设置</h3>
-      <el-menu
-        default-active="1"
-        class="function-menu"
-        mode="vertical"
-        @select="handleMenuSelect"
-      >
-        <el-menu-item index="1">
-          <template #title>
-            <el-icon><User /></el-icon>
-            <span>基本资料</span>
-          </template>
-        </el-menu-item>
-        <el-menu-item index="2">
-          <template #title>
-            <el-icon><Location /></el-icon>
-            <span>收货地址</span>
-          </template>
-        </el-menu-item>
-        <el-menu-item index="3">
-          <template #title>
-            <el-icon><Lock /></el-icon>
-            <span>修改密码</span>
-          </template>
-        </el-menu-item>
-        <el-menu-item index="4">
-          <template #title>
-            <el-icon><SwitchButton /></el-icon>
-            <span>退出登录</span>
-          </template>
-        </el-menu-item>
-      </el-menu>
-    </el-card>
-    
-    <!-- 基本资料弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      title="编辑基本资料"
-      width="500px"
-    >
-      <el-form :model="editForm" label-width="80px">
-        <el-form-item label="昵称">
-          <el-input v-model="editForm.nickname" placeholder="请输入昵称" />
-        </el-form-item>
-        <el-form-item label="性别">
-          <el-radio-group v-model="editForm.sex">
-            <el-radio label="0">男</el-radio>
-            <el-radio label="1">女</el-radio>
-            <el-radio label="2">未知</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="手机号">
-          <el-input v-model="editForm.phonenumber" placeholder="请输入手机号" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveProfile">保存</el-button>
-        </span>
-      </template>
-    </el-dialog>
-    
-    <!-- 修改密码弹窗 -->
-    <el-dialog
-      v-model="pwdDialogVisible"
-      title="修改密码"
-      width="500px"
-    >
-      <el-form :model="pwdForm" label-width="100px" :rules="pwdRules" ref="pwdFormRef">
-        <el-form-item label="旧密码" prop="oldPassword">
-          <el-input type="password" v-model="pwdForm.oldPassword" placeholder="请输入旧密码" />
-        </el-form-item>
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input type="password" v-model="pwdForm.newPassword" placeholder="请输入新密码" />
-        </el-form-item>
-        <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input type="password" v-model="pwdForm.confirmPassword" placeholder="请确认新密码" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="pwdDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="savePassword">保存</el-button>
-        </span>
-      </template>
-    </el-dialog>
-        </div>
-      </el-main>
-    </el-container>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Phone, User, Location, Lock, SwitchButton, Timer, Van, Box, List } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-import { getInfo } from '@/api/portal/user'
-import { updateProfile } from '@/api/portal/user'
-import { updatePassword } from '@/api/portal/user'
+import {
+  Camera, Trophy, Iphone, EditPen, LocationInformation, Lock, SwitchButton,
+  Wallet, Box, Van, CircleCheck, ArrowRight
+} from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { updateProfile, updatePassword } from '@/api/portal/user'
 import { getAppUserInfo } from '@/api/appLogin'
 import Header from '@/views/computerMarket/Header.vue'
+import { formatAvatarUrl, DEFAULT_AVATAR, handleAvatarError } from '@/utils/avatarUtils'
 
 const router = useRouter()
 
-// 用户信息
+// 用户信息 (去除余额和性别，保留核心展示)
 const userInfo = ref({
   username: '',
   nickname: '',
   avatar: '',
   phonenumber: '',
-  sex: '2',
-  creditScore: 700,
-  balance: 0
+  creditScore: 700, // 默认700
 })
 
-// 默认头像
-const defaultAvatar = '/img/profile.jpg'
+// 环境变量配置
+const uploadImgUrl = ref(import.meta.env.VITE_APP_BASE_API + "/app/user/avatar")
 
-// 编辑资料弹窗
+// 弹窗控制
 const dialogVisible = ref(false)
+const pwdDialogVisible = ref(false)
+
+// 编辑表单 (去除了性别)
 const editForm = reactive({
   nickname: '',
-  sex: '2',
   phonenumber: ''
 })
 
-// 修改密码弹窗
-const pwdDialogVisible = ref(false)
+// 密码表单
 const pwdFormRef = ref()
 const pwdForm = reactive({
   oldPassword: '',
@@ -233,131 +250,97 @@ const pwdForm = reactive({
   confirmPassword: ''
 })
 
-// 密码验证规则
 const pwdRules = {
   oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
-  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+  ],
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
     { validator: (rule, value, callback) => {
-        if (value !== pwdForm.newPassword) {
-          callback(new Error('两次输入密码不一致'))
-        } else {
-          callback()
-        }
+        if (value !== pwdForm.newPassword) callback(new Error('两次输入密码不一致'))
+        else callback()
       }, trigger: 'blur' }
   ]
 }
 
-// 计算信用分颜色
-const creditColor = computed(() => {
-  const score = userInfo.value.creditScore || 700
-  if (score >= 800) return '#67c23a'
-  if (score >= 700) return '#e6a23c'
-  return '#f56c6c'
-})
+// 计算属性
+const appToken = computed(() => localStorage.getItem('app_token'))
 
-// 计算用户头像
 const userAvatar = computed(() => {
-  if (userInfo.value && userInfo.value.avatar) {
-    return userInfo.value.avatar
-  }
-  return defaultAvatar
+  return userInfo.value.avatar ? formatAvatarUrl(userInfo.value.avatar) : ''
 })
 
-// 获取App-Token
-const appToken = computed(() => {
-  return localStorage.getItem('app_token')
+// 计算等级 (静态逻辑，基于信用分模拟等级，让页面更丰富)
+const userLevel = computed(() => {
+  const score = userInfo.value.creditScore || 700
+  if (score > 800) return 6
+  if (score > 750) return 5
+  if (score > 700) return 4
+  return 3
 })
 
-// 获取用户信息
+// 信用分百分比 (用于环形进度条，假设满分950)
+const creditPercentage = computed(() => {
+  const score = userInfo.value.creditScore || 700
+  return Math.min(100, Math.round((score / 950) * 100))
+})
+
+// 方法
 const getUserInfo = async () => {
   const token = localStorage.getItem('app_token')
-  if (token) {
-    try {
-      const res = await getAppUserInfo()
-      userInfo.value = {
-        ...userInfo.value,
-        ...res.user,
-        creditScore: res.user.creditScore || 700,
-        balance: res.user.balance || 0
-      }
-    } catch (err) {
-      console.error('获取用户信息失败:', err)
-      localStorage.removeItem('app_token')
-      ElMessage.error('登录状态已过期，请重新登录')
-      router.push('/portal/login')
+  if (!token) return router.push('/portal/login')
+  
+  try {
+    const res = await getAppUserInfo()
+    userInfo.value = {
+      ...userInfo.value,
+      ...res.user,
+      creditScore: res.user.creditScore || 750 // 给一个默认好看的分数
     }
+  } catch (err) {
+    localStorage.removeItem('app_token')
+    router.push('/portal/login')
   }
 }
 
-// 头像上传成功处理
 const handleAvatarSuccess = (response) => {
   if (response.code === 200) {
-    userInfo.value.avatar = response.data.avatar
-    ElMessage.success('头像上传成功')
+    const avatarUrl = response.avatar || (response.data && response.data.avatar)
+    if (avatarUrl) {
+      userInfo.value.avatar = avatarUrl
+      ElMessage.success('头像更新成功')
+    }
   } else {
-    ElMessage.error('头像上传失败')
+    ElMessage.error('上传失败')
   }
 }
 
-// 处理头像加载失败
-const handleAvatarError = (event) => {
-  event.target.src = defaultAvatar
-}
-
-// 头像上传前验证
 const beforeAvatarUpload = (file) => {
-  const isJPG = file.type === 'image/jpeg' || file.type === 'image/png'
+  const isImg = ['image/jpeg', 'image/png'].includes(file.type)
   const isLt2M = file.size / 1024 / 1024 < 2
-
-  if (!isJPG) {
-    ElMessage.error('上传头像图片只能是 JPG/PNG 格式!')
-  }
-  if (!isLt2M) {
-    ElMessage.error('上传头像图片大小不能超过 2MB!')
-  }
-  return isJPG && isLt2M
+  if (!isImg || !isLt2M) ElMessage.error('请上传2MB以内的JPG/PNG图片')
+  return isImg && isLt2M
 }
 
-// 菜单选择处理
-const handleMenuSelect = (index) => {
-  switch (index) {
-    case '1':
-      // 编辑基本资料
-      editForm.nickname = userInfo.value.nickname
-      editForm.sex = userInfo.value.sex
-      editForm.phonenumber = userInfo.value.phonenumber
-      dialogVisible.value = true
-      break
-    case '2':
-      // 跳转到收货地址
-      router.push('/portal/user/address')
-      break
-    case '3':
-      // 修改密码
-      pwdDialogVisible.value = true
-      break
-    case '4':
-      // 退出登录
-      handleLogout()
-      break
-  }
+const openEditProfile = () => {
+  editForm.nickname = userInfo.value.nickname
+  editForm.phonenumber = userInfo.value.phonenumber
+  dialogVisible.value = true
 }
 
-// 保存基本资料
 const saveProfile = async () => {
   try {
     await updateProfile(editForm)
     await getUserInfo()
     dialogVisible.value = false
-    ElMessage.success('基本资料修改成功')
-  } catch (error) {
-    ElMessage.error('基本资料修改失败')
+    ElMessage.success('资料已更新')
+  } catch (e) {
+    ElMessage.error('更新失败')
   }
 }
 
-// 保存密码
 const savePassword = async () => {
   if (!pwdFormRef.value) return
   await pwdFormRef.value.validate(async (valid) => {
@@ -365,354 +348,361 @@ const savePassword = async () => {
       try {
         await updatePassword(pwdForm)
         pwdDialogVisible.value = false
-        pwdForm.oldPassword = ''
-        pwdForm.newPassword = ''
-        pwdForm.confirmPassword = ''
-        ElMessage.success('密码修改成功')
-      } catch (error) {
-        ElMessage.error('密码修改失败')
+        // 清空表单
+        Object.keys(pwdForm).forEach(k => pwdForm[k] = '')
+        ElMessage.success('密码修改成功，请重新登录')
+        handleLogout()
+      } catch (e) {
+        ElMessage.error('修改失败')
       }
     }
   })
 }
 
-// 退出登录
 const handleLogout = () => {
-  localStorage.removeItem('app_token')
-  userInfo.value = {
-    username: '',
-    nickname: '',
-    avatar: '',
-    phonenumber: '',
-    sex: '2',
-    creditScore: 700,
-    balance: 0
-  }
-  ElMessage.success('退出登录成功')
-  router.push('/computer-market')
-}
-
-// 跳转到订单页面
-const goToOrder = (tabIndex) => {
-  router.push({
-    path: '/portal/user/order',
-    query: { activeTab: tabIndex }
+  ElMessageBox.confirm('确定要退出登录吗?', '提示', { confirmButtonText: '退出', cancelButtonText: '取消' }).then(() => {
+    localStorage.removeItem('app_token')
+    router.push('/portal/login')
   })
 }
 
-// 页面挂载时获取用户信息
-onMounted(() => {
-  getUserInfo()
-})
-</script>
-
-<style scoped>
-/* 布局样式 */
-.common-layout {
-  min-height: 100vh;
+const goToOrder = (tab) => {
+  router.push({ path: '/portal/user/order', query: { activeTab: tab } })
 }
 
-.app-container {
-  background-color: #FAFAF8;
-  color: #000000;
+onMounted(() => getUserInfo())
+</script>
+
+<style scoped lang="scss">
+/* 基础布局 */
+.common-layout {
   min-height: 100vh;
+  background-color: #f5f7fa; /* 浅灰底色 */
 }
 
 .main-content {
-  background-color: #FAFAF8;
-  padding: 20px;
-  margin-top: 70px; /* 为固定导航栏留出空间 */
+  padding-top: 80px; /* 避开 Header */
+  padding-bottom: 40px;
 }
 
-.profile-container {
-  max-width: 1200px;
+.dashboard-container {
+  max-width: 1100px; /* 限制内容宽度，PC端更精致 */
   margin: 0 auto;
   padding: 0 20px;
 }
 
-/* 头部信息样式 */
-.profile-header {
-  margin-bottom: 20px;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-  padding: 20px 0;
-}
-
-/* 头像样式 */
-.avatar-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.avatar-uploader {
+/* --- 1. 顶部个人信息卡片 --- */
+.profile-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
   position: relative;
-  width: 120px;
-  height: 120px;
 }
 
-.avatar {
-  width: 120px;
+.profile-bg {
+  height: 160px; /* 增加高度 */
+  background: linear-gradient(135deg, #a0cfff 0%, #626aef 100%);
+  opacity: 0.9;
+}
+
+.profile-body {
+  padding: 0 40px 30px;
+  display: flex;
+  align-items: flex-start; /* 改为顶部对齐，通过 padding 控制垂直位置 */
+  margin-top: -60px; /* 头像上浮距离 */
+  gap: 30px;
+  position: relative;
+}
+
+/* 头像 */
+.avatar-box {
+  width: 120px; /* 稍微加大一点头像 */
   height: 120px;
   border-radius: 50%;
+  background: #fff;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: all 0.3s ease;
 }
 
-.avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.15);
-}
-
-.avatar-uploader-icon {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background-color: #f5f7fa;
-  border: 1px dashed #d9d9d9;
-  cursor: pointer;
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #f0f2f5;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  color: #8c939d;
-  transition: all 0.3s ease;
+  font-size: 40px;
+  color: #909399;
+  font-weight: bold;
 }
 
-.avatar-uploader-icon:hover {
-  border-color: #409eff;
-  color: #409eff;
-  background-color: #ecf5ff;
+.avatar-mask {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-.avatar-hint {
+.avatar-box:hover .avatar-mask {
+  opacity: 1;
+}
+
+/* 文字信息 */
+.info-wrapper {
+  flex: 1;
+  padding-top: 70px; /* 关键：把文字往下推 */
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.nickname {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
+  margin: 0;
+}
+
+.id-row {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.join-row {
+  font-size: 13px;
+  color: #909399;
+  background: #f4f4f5;
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: inline-block;
+}
+.join-row .days {
+  color: #626aef;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+/* 数据概览 (信誉分) */
+.stats-wrapper {
+  padding-top: 70px; /* 关键：把右侧数据也往下推 */
+  display: flex;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #fbfbfb;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+}
+
+.score-text {
+  font-weight: bold;
+  color: #303133;
+  font-size: 14px;
+}
+
+.stat-info .label {
+  font-size: 15px;
+  font-weight: bold;
+  color: #303133;
+}
+.stat-info .desc {
   font-size: 12px;
   color: #909399;
 }
 
-/* 用户信息样式 */
-.user-info-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.user-main-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.nickname {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.username {
-  font-size: 14px;
-  color: #606266;
-}
-
-.auth-tag {
-  margin-left: 10px;
-}
-
-.user-detail-info {
-  display: flex;
-  gap: 30px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #606266;
-}
-
-/* 信用分和余额样式 */
-.credit-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 0 30px;
-  border-left: 1px solid #ebeef5;
-}
-
-.credit-score {
-  position: relative;
-}
-
-.progress-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.progress-text {
-  font-size: 14px;
-  color: #606266;
-  margin-bottom: 5px;
-}
-
-.progress-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.balance-info {
-  text-align: center;
-}
-
-.balance-label {
-  font-size: 14px;
-  color: #606266;
-  margin-bottom: 5px;
-}
-
-.balance-amount {
-  font-size: 28px;
-  font-weight: 600;
-  color: #e6a23c;
-}
-
-/* 订单快捷入口样式 */
-.order-shortcuts {
-  margin-bottom: 20px;
-}
-
-.section-title {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  border-bottom: 2px solid #409eff;
-  padding-bottom: 10px;
-  display: inline-block;
-}
-
-.shortcuts-grid {
+/* --- 2. 下方内容网格 --- */
+.content-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: 2fr 1fr; /* 左侧宽，右侧窄 */
+  gap: 24px;
 }
 
-.shortcut-item {
+.panel-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  border-left: 4px solid #626aef;
+  padding-left: 10px;
+}
+
+/* 订单导航 */
+.order-nav {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px 0;
+}
+
+.nav-item {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  gap: 10px;
+  transition: transform 0.2s;
+}
+
+.nav-item:hover {
+  transform: translateY(-3px);
+}
+
+.icon-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 25px 0;
-  background-color: #f5f7fa;
-  border-radius: 12px;
+  font-size: 24px;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.nav-item span {
+  font-size: 14px;
+  color: #606266;
+}
+
+.blue { background: linear-gradient(135deg, #409eff, #79bbff); }
+.orange { background: linear-gradient(135deg, #e6a23c, #f3d19e); }
+.green { background: linear-gradient(135deg, #67c23a, #95d475); }
+.purple { background: linear-gradient(135deg, #626aef, #a0cfff); }
+
+/* Banner */
+.banner-box {
+  background: linear-gradient(to right, #fdfbfb, #ebedee);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.banner-text h3 { margin: 0 0 5px 0; font-size: 16px; color: #303133; }
+.banner-text p { margin: 0; font-size: 12px; color: #909399; }
+
+.mt-20 { margin-top: 20px; }
+
+/* 设置列表 */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 10px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
+  border-bottom: 1px solid #f5f7fa;
+  transition: background 0.2s;
+  border-radius: 8px;
 }
 
-.shortcut-item:hover {
-  background-color: #ecf5ff;
-  border-color: #409eff;
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+.setting-item:hover {
+  background: #f9faff;
+}
+.setting-item:last-child {
+  border-bottom: none;
 }
 
-.shortcut-icon {
-  font-size: 32px;
-  color: #409eff;
-  margin-bottom: 10px;
+.set-icon {
+  width: 36px;
+  height: 36px;
+  background: #f2f3f5;
+  color: #606266;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  font-size: 18px;
 }
 
-.shortcut-text {
+.set-info {
+  flex: 1;
+}
+
+.set-title {
   font-size: 14px;
   color: #303133;
   font-weight: 500;
 }
-
-/* 功能列表样式 */
-.function-list {
-  margin-bottom: 20px;
+.set-desc {
+  font-size: 12px;
+  color: #909399;
 }
 
-.function-menu {
-  border: none;
-  background: none;
+.arrow {
+  color: #c0c4cc;
 }
 
-.function-menu .el-menu-item {
-  height: 60px;
-  line-height: 60px;
-  font-size: 16px;
-  color: #303133;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  transition: all 0.3s ease;
+.logout .set-icon {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+.logout .set-title {
+  color: #f56c6c;
 }
 
-.function-menu .el-menu-item:hover {
-  background-color: #ecf5ff;
-  color: #409eff;
-}
-
-.function-menu .el-menu-item.is-active {
-  background-color: #ecf5ff;
-  color: #409eff;
-}
-
-.function-menu .el-menu-item .el-icon {
-  margin-right: 12px;
-  font-size: 18px;
-}
-
-/* 响应式设计 */
-@media (max-width: 1024px) {
-  .header-content {
+/* 响应式 */
+@media screen and (max-width: 768px) {
+  .profile-body {
     flex-direction: column;
+    align-items: center;
     text-align: center;
-    gap: 20px;
+    margin-top: -60px;
   }
   
-  .credit-section {
-    border-left: none;
-    border-top: 1px solid #ebeef5;
-    padding-top: 20px;
+  .content-grid {
+    grid-template-columns: 1fr;
   }
   
-  .user-detail-info {
+  .stats-wrapper {
+    width: 100%;
     justify-content: center;
-  }
-}
-
-@media (max-width: 768px) {
-  .shortcuts-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .user-main-info {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .user-detail-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
+    display: flex;
   }
 }
 </style>

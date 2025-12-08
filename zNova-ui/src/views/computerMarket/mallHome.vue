@@ -1,134 +1,164 @@
 <template>
   <div class="common-layout">
     <el-container class="app-container">
-      <!-- 导入的头部导航栏组件 -->
       <Header />
       
-      <!-- 主要内容区域 -->
       <el-main class="main-content">
-        <div class="carousel-container">
-          <!-- 轮播图 -->
-          <el-carousel trigger="click" height="520px" indicator-position="bottom">
+        <!-- 轮播图区域：增加圆角和阴影，使其更像一个展示台 -->
+        <div class="carousel-wrapper">
+          <el-carousel trigger="click" height="500px" class="main-carousel">
             <el-carousel-item>
-              <img 
-                src="@/assets/images/1.jpg" 
-                alt="轮播图1" 
-                class="carousel-img"
-              >
+              <img src="@/assets/images/1.jpg" alt="轮播图1" class="carousel-img">
             </el-carousel-item>
             <el-carousel-item>
-              <img 
-                src="@/assets/images/2.jpg" 
-                alt="轮播图2" 
-                class="carousel-img"
-              >
-              <div class="carousel-text carousel-text-white">
-                找到你的完美装备<br>
-                <h1>性能，一触即知</h1>
+              <div class="carousel-content">
+                <img src="@/assets/images/2.jpg" alt="轮播图2" class="carousel-img">
+                <div class="carousel-overlay light">
+                  <h3>找到你的完美装备</h3>
+                  <h1>性能，一触即知</h1>
+                </div>
               </div>
             </el-carousel-item>
             <el-carousel-item>
-              <img 
-                src="@/assets/images/3.jpg" 
-                alt="轮播图3" 
-                class="carousel-img"
-              >
-              <div class="carousel-text carousel-text-black">
-                为游戏玩家、直播用户和创意人士<br>
-                <h2>精心打造出色的电脑体验</h2>
+              <div class="carousel-content">
+                <img src="@/assets/images/3.jpg" alt="轮播图3" class="carousel-img">
+                <div class="carousel-overlay dark">
+                  <h3>为创意与游戏而生</h3>
+                  <h1>打造极致体验</h1>
+                </div>
               </div>
             </el-carousel-item>
           </el-carousel>
+        </div>
 
-          <!-- 按钮区域 -->
-          <div class="buttons-container">
-             <a href="#" class="custom-btn" @click.prevent="goToSale">我要购买</a>
-            <a href="#" class="custom-btn" @click.prevent="goToRental">我要租赁</a>
-            <a href="#" class="custom-btn" @click.prevent="goToBuild">DIY装机</a>
+        <!-- 快捷入口区域：改为卡片式，更符合浅色极简风格 -->
+        <div class="service-cards">
+          <div class="service-card" @click="goToSale">
+            <el-icon class="service-icon"><Goods /></el-icon>
+            <div class="service-info">
+              <h3>我要购买</h3>
+              <p>精选全新/二手优质主机</p>
+            </div>
+            <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+          </div>
+          <div class="service-card" @click="goToRental">
+            <el-icon class="service-icon"><Timer /></el-icon>
+            <div class="service-info">
+              <h3>我要租赁</h3>
+              <p>低成本体验高性能设备</p>
+            </div>
+            <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+          </div>
+          <div class="service-card" @click="goToBuild">
+            <el-icon class="service-icon"><Cpu /></el-icon>
+            <div class="service-info">
+              <h3>DIY 装机</h3>
+              <p>定制专属你的强力装备</p>
+            </div>
+            <el-icon class="arrow-icon"><ArrowRight /></el-icon>
           </div>
         </div>
 
-        <!-- 热门机型区域 -->
-        <div class="hot-model-section">
-          <span class="hot-model-text"><h2>热门机型</h2></span>
-          <div class="hot-model-line"></div>
+        <!-- 热门机型标题 -->
+        <div class="section-header">
+          <h2>热门机型推荐</h2>
+          <span class="subtitle">Hot Recommendations</span>
         </div>
 
         <!-- 商品列表展示区域 -->
-        <div class="product-section">
-          <div v-for="product in productList" :key="product.id" class="product-item">
-            <h3 class="product-name">{{ product.productName }}</h3>
+        <div class="product-list">
+          <div v-for="product in productList" :key="product.id" class="product-card">
+            
+            <!-- 左侧：图片 -->
+            <div class="product-thumb">
+              <img 
+                :src="product.imageUrl ? handleImageUrl(product.imageUrl) : '@/assets/images/default-product.jpg'" 
+                alt="商品图片" 
+              >
+              <div class="product-tag" :class="product.productType === '1' ? 'tag-rent' : 'tag-sale'">
+                {{ product.productType === '1' ? '租赁' : '售卖' }}
+              </div>
+            </div>
 
-            <div class="product-detail">
-              <div class="product-image">
-                <img 
-                  :src="product.imageUrl ? handleImageUrl(product.imageUrl) : '@/assets/images/default-product.jpg'" 
-                  alt="商品图片" 
-                  class="product-img"
-                >
+            <!-- 中间：信息详情 (移除 el-form，使用更现代的布局) -->
+            <div class="product-info">
+              <h3 class="product-title" @click="goToDetail(product)">{{ product.productName }}</h3>
+              
+              <!-- 硬件参数网格 -->
+              <div class="specs-grid">
+                <div class="spec-item">
+                  <span class="label">CPU</span>
+                  <span class="value">{{ product.cpu }}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="label">显卡</span>
+                  <span class="value">{{ product.graphicsCard }}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="label">内存</span>
+                  <span class="value">{{ product.memory }}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="label">硬盘</span>
+                  <span class="value">{{ product.ssd }}</span>
+                </div>
+                <div class="spec-item full-width">
+                  <span class="label">主板</span>
+                  <span class="value">{{ product.motherboard }}</span>
+                </div>
               </div>
 
-              <div class="product-form">
-                <el-form :model="product" label-width="80px" class="hardware-form">
-                  <el-form-item label="CPU">
-                    <el-input v-model="product.cpu" readonly />
-                  </el-form-item>
-                  <el-form-item label="内存">
-                    <el-input v-model="product.memory" readonly />
-                  </el-form-item>
-                  <el-form-item label="硬盘">
-                    <el-input v-model="product.ssd" readonly />
-                  </el-form-item>
-                  <el-form-item label="显卡">
-                    <el-input v-model="product.graphicsCard" readonly />
-                  </el-form-item>
-                  <el-form-item label="主板">
-                    <el-input v-model="product.motherboard" readonly />
-                  </el-form-item>
-                  <el-form-item label="价格">
-                    <template v-if="product.productType === '1'">
-                      <el-input :value="`租赁: ${product.rentPrice || 0}元/天`" readonly />
-                    </template>
-                    <template v-else-if="product.productType === '2'">
-                      <el-input :value="`销售: ${product.salePrice || 0}元`" readonly />
-                    </template>
-                    <template v-else>
-                      <el-input :value="`销售: ${product.salePrice || 0}元 / 租赁: ${product.rentPrice || 0}元/天`" readonly />
-                    </template>
-                  </el-form-item>
-                </el-form>
+              <!-- 价格显示 -->
+              <div class="price-box">
+                <template v-if="product.productType === '1'">
+                  <span class="currency">¥</span>
+                  <span class="amount">{{ product.rentPrice || 0 }}</span>
+                  <span class="unit">/天起</span>
+                </template>
+                <template v-else>
+                  <span class="currency">¥</span>
+                  <span class="amount">{{ product.salePrice || 0 }}</span>
+                </template>
               </div>
+            </div>
 
-              <div class="performance-score">
-                <h3>性能评分</h3>
+            <!-- 右侧：评分与操作 -->
+            <div class="product-action-zone">
+              <div class="score-circle">
                 <el-progress 
                   type="dashboard" 
                   :percentage="product.performanceScore.percentage"
-                  :stroke-width="15"
-                  :width="180"
+                  :color="customColors"
+                  :stroke-width="8"
+                  :width="100"
                 >
                   <template #default>
-                    <span class="percentage-value">{{ product.performanceScore.score }}</span>
-                    <span class="percentage-label">综合性能</span>
+                    <div class="score-inner">
+                      <span class="score-num">{{ product.performanceScore.score }}</span>
+                      <span class="score-text">性能分</span>
+                    </div>
                   </template>
                 </el-progress>
               </div>
 
-              <div class="service-buttons">
-                <a href="#" class="action-btn detail" @click.prevent="goToDetail(product)">商品详情</a>
-                <a href="#" class="action-btn" :class="product.productType === '1' ? 'rent' : 'buy'" @click.prevent="handlePurchase(product)">
+              <div class="action-buttons">
+                <el-button type="primary" size="large" round class="btn-main" @click.prevent="handlePurchase(product)">
                   {{ product.productType === '1' ? '立即租赁' : '立即购买' }}
-                </a>
-                <a href="#" class="action-btn consult" @click.prevent="addToCart(product)">加入购物车</a>
+                </el-button>
+                <div class="secondary-actions">
+                  <el-button link @click.prevent="goToDetail(product)">查看详情</el-button>
+                  <el-divider direction="vertical" />
+                  <el-button link @click.prevent="addToCart(product)">加入购物车</el-button>
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </el-main>
       
-      <!-- 页脚 -->
       <el-footer class="footer-content">
-        <p>电脑租售与硬件性能智能评估平台</p>
+        <p>© 2024 电脑租售与硬件性能智能评估平台 | 极致性能 触手可及</p>
       </el-footer>
     </el-container>
   </div>
@@ -137,35 +167,33 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElContainer, ElMain, ElFooter, ElCarousel, ElCarouselItem, ElForm, ElFormItem, ElInput, ElProgress, ElMessage } from 'element-plus';
+// 引入图标
+import { Goods, Timer, Cpu, ArrowRight } from '@element-plus/icons-vue';
 import { listFrontProduct } from "@/api/front/product";
-import Header from './Header.vue'; // 导入导航栏组件
+import Header from './Header.vue'; 
 import { addToCart as addToCartAPI } from '@/api/shop/cart';
 import { handleImageUrl } from '@/utils/ruoyi'
+import { ElMessage } from 'element-plus';
+
 const router = useRouter();
 
+// 进度条颜色自定义
+const customColors = [
+  { color: '#f56c6c', percentage: 20 },
+  { color: '#e6a23c', percentage: 40 },
+  { color: '#5cb87a', percentage: 60 },
+  { color: '#1989fa', percentage: 80 },
+  { color: '#6f7ad3', percentage: 100 },
+];
+
 // 导航方法
-const goToRental = () => {
-  router.push('/computer-market/rental');
-};
+const goToRental = () => router.push('/computer-market/rental');
+const goToSale = () => router.push('/computer-market/sale');
+const goToBuild = () => router.push('/computer-market/build');
+const goToDetail = (product) => router.push(`/computer-market/product-detail/${product.id}`);
 
-const goToSale = () => {
-  router.push('/computer-market/sale');
-};
-
-// 新增装机页面导航
-const goToBuild = () => {
-  router.push('/computer-market/build');
-};
-
-// 跳转到商品详情页
-const goToDetail = (product) => {
-  router.push(`/computer-market/product-detail/${product.id}`);
-};
-
-// 处理立即租赁/购买
+// 购买/租赁逻辑
 const handlePurchase = (product) => {
-  // 构建商品数据
   const productData = {
     productId: product.id,
     productName: product.productName,
@@ -173,11 +201,9 @@ const handlePurchase = (product) => {
     price: product.productType === '1' ? product.rentPrice : product.salePrice,
     businessType: product.productType === '1' ? '1' : '2',
     quantity: 1,
-    daterange: [], // 租赁日期范围
-    rentDays: 0    // 租赁天数
+    daterange: [], 
+    rentDays: 0    
   };
-
-  // 跳转到订单结算页面，携带商品数据
   router.push({
     path: '/computer-market/checkout',
     query: {
@@ -187,19 +213,16 @@ const handlePurchase = (product) => {
   });
 };
 
-// 添加到购物车
 const addToCart = async (product) => {
   try {
-    // 首页商品数据结构与后端商品不同，需要映射
     const cartData = {
       productId: product.id,
       productName: product.productName,
       productImg: product.imageUrl,
       price: product.rentPrice || product.salePrice || 0,
-      businessType: product.productType === '1' ? '1' : '2', // 根据商品类型判断
+      businessType: product.productType === '1' ? '1' : '2', 
       quantity: 1
     };
-    
     await addToCartAPI(cartData);
     ElMessage.success('已加入购物车');
   } catch (error) {
@@ -208,10 +231,9 @@ const addToCart = async (product) => {
   }
 };
 
-// 商品数据
 const productList = ref([]);
 
-// 性能分数计算
+// 性能分数计算逻辑保持不变
 const calculateScore = (product) => {
   let cpuBaseScore = 0;
   let memoryScore = 0;
@@ -233,72 +255,55 @@ const calculateScore = (product) => {
   const maxScore = 28387;
   const percentage = Math.min(100, Math.round((totalScore / maxScore) * 100));
 
-  return {
-    score: totalScore,
-    percentage
-  };
+  return { score: totalScore, percentage };
 };
 
-// 获取商品数据
 const getProductData = async () => {
   try {
     const response = await listFrontProduct({});
     if (response.rows && response.rows.length > 0) {
-      const hotProducts = response.rows.filter(product => 
-        [1, 2, 3].includes(product.id)
-      );
-
+      const hotProducts = response.rows.filter(product => [1, 2, 3].includes(product.id));
       productList.value = hotProducts.map(product => ({
         ...product,
         performanceScore: calculateScore(product)
       }));
-
       productList.value.sort((a, b) => a.id - b.id);
     } else {
-      console.warn('未获取到商品数据');
       productList.value = [];
     }
   } catch (error) {
     console.error('获取商品数据失败:', error);
     productList.value = [];
-    ElMessage.error('获取热门商品失败，请重试');
   }
 };
 
-// 页面挂载时获取数据
 onMounted(() => {
   getProductData();
 });
 </script>
 
 <style scoped>
-/* 保留所有原有样式，移除了导航栏相关样式（已移至Header组件） */
-.common-layout {
-  min-height: 100vh;
-}
-
+/* 全局容器：使用柔和的浅灰色背景 */
 .app-container {
-  background-color: #FAFAF8;
-  color: #000000;
+  background-color: #f5f7fa;
   min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .main-content {
-  background-color: #FAFAF8;
-  padding: 20px;
-  margin-top: 70px; /* 为固定导航栏留出空间 */
+  padding: 0;
+  margin-top: 60px; /* 适配 Header 高度 */
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-/* 轮播图样式 */
-.carousel-container {
-  width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: relative;
+/* --- 轮播图区域优化 --- */
+.carousel-wrapper {
+  background: #fff;
+  margin-bottom: 20px;
 }
+
+
 
 .carousel-img {
   width: 100%;
@@ -306,349 +311,308 @@ onMounted(() => {
   object-fit: cover;
 }
 
-.carousel-text {
-  position: absolute;
-  left: 200px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1.6;
-  z-index: 10;
-  text-align: left;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.carousel-text-white {
-  color: #ffffff;
-}
-
-.carousel-text-black {
-  color: #000000;
-  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.3);
-}
-
-.carousel-text h1,
-.carousel-text h2 {
-  font-size: 2.5rem;
-  margin: 10px 0;
-}
-
-/* 按钮样式 */
-.buttons-container {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  padding: 40px 0;
-}
-
-.custom-btn {
+.carousel-content {
   position: relative;
-  width: 200px;
-  height: 60px;
-  text-align: center;
-  line-height: 60px;
-  color: #fff;
-  font-size: 24px;
-  text-decoration: none;
-  font-family: sans-serif;
-  box-sizing: border-box;
-  background: linear-gradient(
-    135deg,
-    #7b61ff 0%,
-    #9a72ff 20%,
-    #b883ff 40%,
-    #d694ff 50%,
-    #b883ff 60%,
-    #9a72ff 80%,
-    #7b61ff 100%
-  );
-  background-size: 400%;
-  border-radius: 30px;
-  z-index: 1;
-  transition: all 0.3s;
-}
-
-.custom-btn::before {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  z-index: -1;
-  background: linear-gradient(
-    135deg,
-    #7b61ff 0%,
-    #9a72ff 20%,
-    #b883ff 40%,
-    #d694ff 50%,
-    #b883ff 60%,
-    #9a72ff 80%,
-    #7b61ff 100%
-  );
-  background-size: 400%;
-  border-radius: 40px;
-  opacity: 0;
-  filter: blur(15px);
-  transition: opacity 0.5s;
-}
-
-.custom-btn:hover::before {
-  opacity: 1;
-  animation: glow 15s linear infinite;
-}
-.custom-btn:hover {
-  animation: glow 15s linear infinite;
-}
-
-@keyframes glow {
-  0% { background-position: 0% 0; }
-  100% { background-position: 400% 0; }
-}
-
-.custom-btn:hover::before {
-  opacity: 1;
-  filter: blur(20px);
-  animation: animate 8s linear infinite;
-}
-
-.custom-btn:hover {
-  animation: animate 8s linear infinite;
-}
-
-@keyframes animate {
-  0% {
-    background-position: 0%;
-  }
-  100% {
-    background-position: 400%;
-  }
-}
-
-/* 热门机型+横线容器 */
-.hot-model-section {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin-top: 20px;
-  padding-left: 20px;
-}
-
-.hot-model-text {
-  font-size: 20px;
-  font-weight: 600;
-  color: #9a72ff;
-  white-space: nowrap;
-}
-
-.hot-model-line {
-  height: 2px;
-  background-color: #e0e0e0;
-  flex-grow: 1;
-  margin-left: 15px;
-  max-width: 1300px;
-}
-
-/* 商品展示区域样式 */
-.product-section {
-  padding: 30px 20px;
-  max-width: 1600px;
-  margin: 0 auto;
-}
-
-.product-name {
-  font-size: 22px;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 20px;
-  padding-left: 12px;
-  border-left: 4px solid #9a72ff;
-  display: flex;
-  align-items: center;
-}
-.product-name::after {
-  content: '';
-  flex-grow: 1;
-  height: 1px;
-  background-color: #f0f0f0;
-  margin-left: 15px;
-}
-.product-detail {
-  display: flex;
-  gap: 10px;
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.product-image {
-flex: 0 0 350px;
-  height: 300px;
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: #f9f9f9;
-  border: 1px solid #f0f0f0;
-  position: relative;
-}
-
-.product-img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  transition: transform 0.5s ease;
 }
 
-.product-img:hover {
-  transform: scale(1.2);
+.carousel-overlay {
+  position: absolute;
+  top: 50%;
+  left: 15%;
+  transform: translateY(-50%);
+  z-index: 10;
 }
 
-.product-form {
-  flex: 1;
-  max-width: 400px; 
+.carousel-overlay h3 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  font-weight: 300;
+  opacity: 0.9;
 }
 
-.hardware-form {
-  max-width: 600px;
+.carousel-overlay h1 {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 1px;
 }
 
-.el-form-item .el-input {
-  width: 100%;
-  max-width: 400px;
-}
+/* 针对不同背景图的文字颜色适配 */
+.carousel-overlay.light { color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+.carousel-overlay.dark { color: #303133; }
 
-/* 性能评分样式 */
-.performance-score {
-  flex: 0 0 220px;
+/* --- 服务卡片（原按钮区域）优化 --- */
+.service-cards {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  padding: 25px;
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  margin-left: 10px;
-  min-height: 280px;
-}
-
-.performance-score h3 {
-  margin-bottom: 20px;
-  color: #333;
-  font-size: 18px;
-}
-
-.percentage-value {
-  display: block;
-  margin-top: 10px;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.percentage-label {
-  display: block;
-  margin-top: 5px;
-  font-size: 14px;
-  color: #666;
-}
-
-.footer-content {
-  background-color: #FAFAF8;
-  text-align: center;
-  padding: 15px 0;
-  border-top: 1px solid #e0e0e0;
-}
-
-/* 按钮容器样式 */
-.service-buttons {
-  flex: 0 0 220px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  padding: 20px;
-}
-
-/* 按钮样式 */
-.action-btn {
-  width: 180px;
-  padding: 12px 0;
-  border-radius: 8px;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 500;
-  text-decoration: none;
-  text-align: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  gap: 30px;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: -40px auto 0; 
   position: relative;
-  overflow: hidden;
-  margin-bottom: 20px;
-  margin-left: 20px;
+  z-index: 20;
 }
 
-.action-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.action-btn:active {
-  transform: translateY(-1px);
-}
-
-.action-btn.rent {
-  background: linear-gradient(135deg, #7b61ff 0%, #9a72ff 100%);
-}
-
-.action-btn.buy {
-  background: linear-gradient(135deg, #0071c5 0%, #00a0e9 100%);
-}
-
-.action-btn.consult {
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-}
-
-.action-btn.detail {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-}
-
-.action-btn::before {
-  content: '';
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
-  vertical-align: middle;
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.product-item {
- background-color: #fff;
-  border-radius: 12px;
-  padding: 25px;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+.service-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 25px 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
   transition: all 0.3s ease;
+  border: 1px solid #fff;
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(111, 122, 211, 0.15);
+  border-color: #d9ecff;
+}
+
+.service-icon {
+  font-size: 46px;
+  color: #626aef;
+  background: #eff0ff;
+  padding: 12px;
+  border-radius: 12px;
+  margin-right: 20px;
+}
+
+.service-info h3 {
+  margin: 0 0 5px;
+  font-size: 18px;
+  color: #303133;
+}
+
+.service-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #909399;
+}
+
+.arrow-icon {
+  margin-left: auto;
+  color: #c0c4cc;
+}
+
+/* --- 标题区域 --- */
+.section-header {
+  text-align: center;
+  margin: 40px 0 30px; /* 增加与上方内容的距离 */
+}
+
+.section-header h2 {
+  font-size: 28px;
+  color: #303133;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.section-header .subtitle {
+  font-size: 14px;
+  color: #909399;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.section-header .subtitle::after {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: #626aef;
+  margin: 8px auto 0;
+}
+
+/* --- 商品列表优化 --- */
+.product-list {
+  max-width: 1200px;
+  margin: 0 auto 60px;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.product-card {
+  display: flex;
+  background: #fff;
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+  border: 1px solid #ebeef5;
 }
 
-.product-item:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+.product-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  border-color: #d9ecff;
 }
 
-.action-btn.rent::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' /%3E%3C/svg%3E");
+/* 商品图片 */
+.product-thumb {
+  width: 280px;
+  height: 240px;
+  position: relative;
+  background: #fcfcfc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.action-btn.buy::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' /%3E%3C/svg%3E");
+.product-thumb img {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain;
+  transition: transform 0.4s;
 }
 
-.action-btn.consult::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z' /%3E%3C/svg%3E");
+.product-card:hover .product-thumb img {
+  transform: scale(1.08);
 }
 
-.action-btn.detail::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' /%3E%3C/svg%3E");
+.product-tag {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+}
+.tag-rent { background: linear-gradient(135deg, #a0cfff 0%, #409eff 100%); }
+.tag-sale { background: linear-gradient(135deg, #fab6b6 0%, #f56c6c 100%); }
+
+/* 商品信息 */
+.product-info {
+  flex: 1;
+  padding: 25px 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-title {
+  margin: 0 0 20px;
+  font-size: 20px;
+  color: #303133;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.product-title:hover { color: #626aef; }
+
+.specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 24px;
+  margin-bottom: 20px;
+}
+
+.spec-item {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.spec-item .label {
+  color: #909399;
+  width: 40px;
+  margin-right: 10px;
+}
+
+.spec-item .value {
+  color: #606266;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.full-width { grid-column: span 2; }
+
+.price-box {
+  margin-top: auto;
+  color: #f56c6c;
+}
+
+.currency { font-size: 18px; font-weight: bold; }
+.amount { font-size: 28px; font-weight: bold; margin: 0 4px; }
+.unit { font-size: 13px; color: #909399; }
+
+/* 右侧操作区 */
+.product-action-zone {
+  width: 220px;
+  border-left: 1px solid #f0f2f5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #fafafa;
+}
+
+.score-circle {
+  margin-bottom: 20px;
+}
+
+.score-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.score-num {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.score-text {
+  font-size: 12px;
+  color: #909399;
+}
+
+.action-buttons {
+  width: 100%;
+  text-align: center;
+}
+
+.btn-main {
+  width: 80%;
+  margin-bottom: 12px;
+  background-color: #626aef; /* 统一品牌色 */
+  border-color: #626aef;
+  box-shadow: 0 4px 12px rgba(98, 106, 239, 0.3);
+}
+.btn-main:hover {
+  background-color: #858bf5;
+  border-color: #858bf5;
+}
+
+.secondary-actions .el-button {
+  font-size: 13px;
+  color: #909399;
+}
+.secondary-actions .el-button:hover {
+  color: #626aef;
+}
+
+/* 页脚 */
+.footer-content {
+  background: #fff;
+  padding: 30px 0;
+  color: #909399;
+  font-size: 13px;
+  border-top: 1px solid #ebeef5;
 }
 </style>
