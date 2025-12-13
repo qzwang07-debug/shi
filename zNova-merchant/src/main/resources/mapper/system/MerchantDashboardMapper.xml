@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.MerchantDashboardMapper">
+
+    <!--
+        聚合查询订单统计
+        1. 移除了 so.del_flag = '0' 条件
+        2. 添加 WHERE 1=1，确保语法正确
+    -->
+    <select id="selectOrderAggregatedStats" parameterType="ShopOrder" resultType="com.zNova.system.domain.vo.DashboardStatsVO">
+        SELECT
+        COUNT(CASE WHEN DATE(so.create_time) = CURDATE() THEN 1 END) AS todayOrderCount,
+        SUM(CASE WHEN so.status = '1' THEN 1 ELSE 0 END) AS pendingShipmentCount,
+        SUM(CASE WHEN so.status IN ('2', '7') THEN 1 ELSE 0 END) AS rentingCount
+        FROM shop_order so
+        WHERE 1=1
+        <!-- 自动注入的权限 SQL -->
+        ${params.dataScope}
+    </select>
+
+    <!--
+        查询商品总数
+        1. 移除了 bp.del_flag = '0' 条件，适配无逻辑删除字段的表结构
+        2. 添加 WHERE 1=1，确保语法正确
+    -->
+    <select id="selectProductCount" parameterType="BizProduct" resultType="Long">
+        SELECT COUNT(*)
+        FROM biz_product bp
+        WHERE 1=1
+            ${params.dataScope}
+    </select>
+
+    <!-- 查询近 7 天趋势 -->
+    <select id="selectTrendData" parameterType="ShopOrder" resultType="java.util.Map">
+        SELECT
+        DATE_FORMAT(so.create_time, '%Y-%m-%d') as dateStr,
+        /* 假设所有订单都算销售量 */
+        COUNT(*) as saleCount,
+        /* 假设状态为 2或7 的算租赁活跃量，或者你有专门的 order_type 字段区分 */
+        SUM(CASE WHEN so.status IN ('2', '7') THEN 1 ELSE 0 END) as rentCount
+        FROM shop_order so
+        WHERE 1=1
+        /* 限制只查过去 7 天的数据 (根据数据库类型调整，这里是 MySQL 写法) */
+        AND so.create_time >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+
+        <!-- 自动注入权限 -->
+        ${params.dataScope}
+
+        GROUP BY DATE_FORMAT(so.create_time, '%Y-%m-%d')
+        ORDER BY dateStr ASC
+    </select>
+
+</mapper>

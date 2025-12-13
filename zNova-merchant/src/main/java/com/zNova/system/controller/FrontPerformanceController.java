@@ -82,9 +82,16 @@ public class FrontPerformanceController extends BaseController {
             memoryScore = ramFreq;
         }
 
+        // 限制内存分数最大值为4000
+        memoryScore = Math.min(memoryScore, 4000);
+
         // C. 总分计算
         double totalScoreVal = cpuBaseScore + memoryScore + gpuScore;
         result.put("totalScore", (int) totalScoreVal);
+        // 添加CPU基础分数到响应结果中，用于前端雷达图展示
+        result.put("cpuBaseScore", (int) cpuBaseScore);
+        // 添加内存分数到响应结果中，用于前端雷达图展示
+        result.put("memoryScore", (int) memoryScore);
 
         // 可选：如果前端需要百分比，这里也可以算，但前端已有逻辑处理进度条
         // double maxScore = 28387;
@@ -104,11 +111,13 @@ public class FrontPerformanceController extends BaseController {
                     .orElse(null);
 
             if (game != null) {
-                Map<String, Integer> fpsMap = performanceService.calculateFps(game, cpu, gpu, ram);
+                Map<String, Object> fpsResult = performanceService.calculateFps(game, cpu, gpu, ram);
                 Map<String, Object> gameData = new HashMap<>();
                 gameData.put("gameName", game.getGameName());
                 gameData.put("description", game.getDescription());
-                gameData.put("fps", fpsMap);
+                gameData.put("fps", fpsResult.get("finalFps"));
+                gameData.put("cpuFps", fpsResult.get("cpuFps"));
+                gameData.put("gpuFps", fpsResult.get("gpuFps"));
                 gameResults.add(gameData);
             }
         }

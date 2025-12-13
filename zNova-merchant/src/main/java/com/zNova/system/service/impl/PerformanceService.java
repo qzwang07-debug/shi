@@ -30,8 +30,8 @@ public class PerformanceService {
     /**
      * 计算多分辨率下的预估帧率
      */
-    public Map<String, Integer> calculateFps(SysGame game, HardwareCpu cpu, HardwareGpu gpu, HardwareMemory ram) {
-        Map<String, Integer> fpsResult = new HashMap<>();
+    public Map<String, Object> calculateFps(SysGame game, HardwareCpu cpu, HardwareGpu gpu, HardwareMemory ram) {
+        Map<String, Object> fpsResult = new HashMap<>();
 
         // 1. 准备硬件基础数据
         String cpuPlatform = "CPU_" + (StringUtils.isNotEmpty(cpu.getBrand()) ? cpu.getBrand().toUpperCase() : "INTEL");
@@ -49,6 +49,13 @@ public class PerformanceService {
         if (ramBenchmark != null && ramBenchmark.getRatio() != null) {
             ramRatio = ramBenchmark.getRatio();
         }
+
+        // 存储最终帧率
+        Map<String, Integer> finalFpsMap = new HashMap<>();
+        // 存储CPU理论帧率
+        Map<String, Integer> cpuFpsMap = new HashMap<>();
+        // 存储GPU理论帧率
+        Map<String, Integer> gpuFpsMap = new HashMap<>();
 
         // 3. 遍历分辨率，分别计算 CPU 和 GPU 的理论帧率
         for (String resolution : RESOLUTIONS) {
@@ -91,8 +98,16 @@ public class PerformanceService {
             // 应用内存修正
             finalFps = new BigDecimal(rawFps).multiply(ramRatio).setScale(0, RoundingMode.HALF_UP).intValue();
 
-            fpsResult.put(resolution, finalFps);
+            // 保存结果
+            finalFpsMap.put(resolution, finalFps);
+            cpuFpsMap.put(resolution, cpuFps);
+            gpuFpsMap.put(resolution, gpuFps);
         }
+
+        // 返回包含最终帧率、CPU理论帧率和GPU理论帧率的结果
+        fpsResult.put("finalFps", finalFpsMap);
+        fpsResult.put("cpuFps", cpuFpsMap);
+        fpsResult.put("gpuFps", gpuFpsMap);
 
         return fpsResult;
     }

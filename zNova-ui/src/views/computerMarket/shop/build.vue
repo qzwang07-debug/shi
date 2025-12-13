@@ -47,6 +47,7 @@
                 </el-col>
                 <el-col :span="9">
                   <el-form-item prop="cpuModel" label-width="0" class="mb-0">
+                    <!-- 修复：添加 popper-class 以便控制下拉框样式 -->
                     <el-select 
                       v-model="activeHardware.cpu"
                       value-key="id"
@@ -54,7 +55,7 @@
                       placeholder="选择处理器型号" 
                       style="width: 100%"
                       @change="handleCpuChange"
-                      popper-class="modern-select-dropdown"
+                      popper-class="hardware-select-dropdown"
                     >
                       <el-option
                         v-for="item in cpuOptions"
@@ -103,6 +104,7 @@
                 </el-col>
                 <el-col :span="6">
                   <el-form-item prop="moboModel" label-width="0" class="mb-0">
+                    <!-- 修复：添加 popper-class -->
                     <el-select 
                       v-model="activeHardware.mobo"
                       value-key="id" 
@@ -111,6 +113,7 @@
                       placeholder="芯片组型号" 
                       style="width: 100%"
                       @change="handleMoboChange"
+                      popper-class="hardware-select-dropdown"
                     >
                       <el-option
                         v-for="item in moboOptions"
@@ -204,6 +207,7 @@
                 </el-col>
                 <el-col :span="6">
                   <el-form-item prop="gpuModel" label-width="0" class="mb-0">
+                    <!-- 修复：添加 popper-class -->
                     <el-select 
                       v-model="activeHardware.gpu"
                       value-key="id" 
@@ -211,6 +215,7 @@
                       placeholder="核心型号" 
                       style="width: 100%"
                       @change="handleGpuChange"
+                      popper-class="hardware-select-dropdown"
                     >
                       <el-option
                         v-for="item in gpuOptions"
@@ -491,12 +496,93 @@
               </div>
             </div>
 
+            <!-- 雷达图展示区 -->
+            <div class="radar-chart-container" v-if="assessResult">
+              <div ref="radarChartRef" class="radar-chart"></div>
+            </div>
+
             <div class="resolution-switch">
               <el-radio-group v-model="currentResolution" size="default" fill="#6366f1">
                 <el-radio-button label="1080P">1080P</el-radio-button>
                 <el-radio-button label="2K">2K</el-radio-button>
                 <el-radio-button label="4K">4K</el-radio-button>
               </el-radio-group>
+            </div>
+
+            <!-- 瓶颈警告区域 -->
+            <div class="bottleneck-warning" :class="{balanced: bottleneckInfo?.type === 'balanced'}" v-if="bottleneckInfo">
+              <div class="warning-header">
+                <el-icon :class="bottleneckInfo.type === 'balanced' ? 'text-success' : 'text-warning'">
+                  <CircleCheckFilled v-if="bottleneckInfo.type === 'balanced'" />
+                  <WarningFilled v-else />
+                </el-icon>
+                <span class="warning-title">{{ bottleneckInfo.message }}</span>
+              </div>
+              <div class="warning-detail">
+                {{ bottleneckInfo.detail }}
+              </div>
+            </div>
+            
+            <!-- 显示器推荐区域 (新增) -->
+            <div class="monitor-recommend-section" v-if="monitorRecommendation">
+              <div class="section-title"><el-icon><Monitor /></el-icon> 智能显示器推荐</div>
+              
+              <!-- Best Choice Highlight -->
+              <div class="best-choice-card">
+                <div class="badge">最佳搭配</div>
+                <div class="choice-content">
+                   <div class="res-hz">
+                     <span class="res">{{ monitorRecommendation.bestChoice.resolution }}</span>
+                     <span class="divider">/</span>
+                     <span class="hz">{{ monitorRecommendation.bestChoice.refreshRate }}</span>
+                   </div>
+                   <div class="reason">{{ monitorRecommendation.bestChoice.reason }}</div>
+                </div>
+              </div>
+
+              <!-- Other Options List -->
+              <div class="options-grid">
+                 <div v-for="opt in monitorRecommendation.options" :key="opt.resolution" 
+                      class="option-item" :class="{active: currentResolution === opt.resolution, best: opt.isBest}"
+                      @click="currentResolution = opt.resolution">
+                    <div class="opt-header">
+                       <span class="opt-res">{{ opt.resolution }}</span>
+                       <span class="opt-hz">{{ opt.refreshRate }}</span>
+                    </div>
+                    <div class="opt-desc">{{ opt.desc }}</div>
+                    <div v-if="opt.isBest" class="best-mark">推荐</div>
+                 </div>
+              </div>
+            </div>
+
+            <!-- 性价比展示区域优化 -->
+            <div class="cp-section" v-if="cpData">
+               <div class="cp-header">
+                 <div class="cp-title">
+                   <span class="label">性价比评估</span>
+                   <el-tooltip content="基于3A大作帧率与总价的换算，并包含性能门槛惩罚机制。" placement="top">
+                     <el-icon class="info-icon"><Warning /></el-icon>
+                   </el-tooltip>
+                 </div>
+                 <div class="cp-right">
+                    <el-tag size="small" :type="cpData.percentage > 75 ? 'success' : 'warning'" effect="dark">{{ cpData.level }}</el-tag>
+                    <span class="cp-value" :style="{color: cpColor}">
+                      {{ cpData.displayValue }} <span class="unit">FPS/k¥</span>
+                    </span>
+                 </div>
+               </div>
+               <div class="cp-bar">
+                 <el-progress 
+                    :text-inside="true" 
+                    :stroke-width="18" 
+                    :percentage="Number(cpData.percentage)" 
+                    :color="cpColor"
+                  />
+               </div>
+               <!-- 惩罚提示 -->
+               <div v-if="cpData.isPenalty" class="penalty-tip">
+                 <el-icon><WarningFilled /></el-icon> 警示：该配置在当前分辨率下难以流畅运行核心3A大作，性价比判定已降级。
+               </div>
             </div>
 
             <div class="games-list">
@@ -530,7 +616,7 @@
 </template>
 
 <script setup name="Build">
-import { ref, reactive, computed, onMounted, h } from 'vue';
+import { ref, reactive, computed, onMounted, h, watch, nextTick, onUnmounted } from 'vue';
 import { ElMessage, ElTooltip, ElIcon, ElMessageBox } from 'element-plus';
 import { Warning, CircleCheck, CircleClose, Monitor, RefreshRight, DataAnalysis, Edit, Lightning, WindPower, Cpu, Box, Help, List, DataLine, CircleCheckFilled, WarningFilled } from '@element-plus/icons-vue';
 import { 
@@ -545,6 +631,9 @@ import { assessPerformance } from '@/api/front/performance';
 import useUserStore from '@/store/modules/user'; 
 import { useRouter } from 'vue-router';
 import Header from '../Header.vue';
+import * as echarts from 'echarts';
+import { markRaw } from 'vue';
+
 // ---------------------------------------------------------------------
 // 组件：状态图标 (StatusIcon)
 // ---------------------------------------------------------------------
@@ -567,6 +656,9 @@ const router = useRouter();
 const userStore = useUserStore();
 const loading = ref(false);
 const formRef = ref(null);
+// 雷达图相关
+const radarChartRef = ref(null);
+let radarChartInstance = null;
 
 // 登录状态检查
 const isLogin = computed(() => {
@@ -724,6 +816,378 @@ const totalPrice = computed(() => {
   form.totalPrice = price; 
   return price.toFixed(2);
 });
+
+// 提取共同的性价比计算逻辑
+function calculateOptimizedRatio(resolution) {
+  if (!assessResult.value || !assessResult.value.games || !form.totalPrice || form.totalPrice <= 0) return null;
+  
+  // 1. 计算总帧率
+  let totalFps = 0;
+  let minFpsInAaa = 999; // 记录3A大作的最低帧，用于熔断机制
+
+  assessResult.value.games.forEach(game => {
+    const fps = game.fps[resolution] || 0;
+    totalFps += fps;
+    
+    // 如果是 3A 大作（这里根据名字包含来判断，实际项目中可用 gameType 字段）
+    if (game.gameName.includes('黑神话') || game.gameName.includes('赛博朋克') || game.gameName.includes('荒野')) {
+        minFpsInAaa = Math.min(minFpsInAaa, fps);
+    }
+  });
+
+  // 2. 原始性价比 (每千元帧数)
+  let ratio = totalFps / form.totalPrice;
+
+  // --- 优化点：性能门槛惩罚 ---
+  // 如果在当前分辨率下，核心3A游戏低于 20帧，说明这台机器在这个分辨率下"不可用"
+  // 强制降低性价比得分，防止"电子垃圾"因为便宜而获得高分
+  if (minFpsInAaa < 20) {
+      ratio = ratio * 0.5; // 惩罚系数，直接砍半
+  } else if (minFpsInAaa < 40) {
+      ratio = ratio * 0.8; // 勉强能玩，小幅惩罚
+  }
+  
+  return {
+    ratio: ratio,
+    minFpsInAaa: minFpsInAaa,
+    totalFps: totalFps
+  };
+}
+
+// START: 优化 - 性价比计算逻辑 (含性能门槛惩罚)
+const cpData = computed(() => {
+  if (!assessResult.value || !assessResult.value.games || !form.totalPrice || form.totalPrice <= 0) return null;
+  
+  const result = calculateOptimizedRatio(currentResolution.value);
+  if (!result) return null;
+  
+  const { ratio, minFpsInAaa } = result;
+
+  // 3. 动态基准值 (每千元多少帧算优秀)
+  const referenceMax = {
+       '1080P': 0.14,
+      '2K': 0.10,
+      '4K': 0.05
+  }[currentResolution.value] || 0.12;
+
+  const percentage = Math.min((ratio / referenceMax) * 100, 100);
+
+  // 4. 生成评价标签 (加分项)
+  let level = '';
+  if (percentage > 90) level = '极致性价比';
+  else if (percentage > 75) level = '物超所值';
+  else if (percentage > 50) level = '价格合理';
+  else level = '信仰充值'; // 指溢价高（全是外观件）或配置不合理
+
+  return {
+    val: ratio,
+    displayValue: (ratio * 1000).toFixed(1), // 每千元能买多少帧
+    percentage: percentage.toFixed(0),
+    level: level,
+    isPenalty: minFpsInAaa < 20 // 前端可以据此显示提示："该配置在当前分辨率下难以流畅运行3A大作"
+  };
+});
+
+const cpColor = computed(() => {
+    if(!cpData.value) return '#909399';
+    const p = Number(cpData.value.percentage);
+    // 性价比高显示绿色，低显示橙/红
+    if(p > 80) return '#13ce66'; 
+    if(p > 60) return '#409eff'; 
+    return '#f56c6c'; 
+});
+
+// START: 新增 - 显示器智能推荐逻辑
+const monitorRecommendation = computed(() => {
+  if (!assessResult.value || !assessResult.value.games || !form.totalPrice || form.totalPrice <= 0) return null;
+
+  const resolutions = ['1080P', '2K', '4K'];
+  // 标准档位列表 (High to Low)
+  const standardRates = [400, 360, 320, 300, 280, 260, 240, 200, 180, 160, 144];
+  // 动态基准值 (与cpData保持一致)
+  const referenceMax = {
+       '1080P': 0.14,
+      '2K': 0.10,
+      '4K': 0.05
+  };
+
+  let bestRes = '1080P';
+  let maxPercentage = -1;
+
+  // 临时计算列表
+  const calculatedOptions = resolutions.map(res => {
+    // 1. 计算优化后的性价比
+    const optimizedResult = calculateOptimizedRatio(res);
+    const totalFps = optimizedResult ? optimizedResult.totalFps : 0;
+    const ratio = optimizedResult ? optimizedResult.ratio : 0;
+    
+    // 2. 获取当前分辨率的动态基准值
+    const refMax = referenceMax[res] || 0.12;
+    
+    // 3. 计算性价比百分比（与cpData保持一致）
+    const percentage = Math.min((ratio / refMax) * 100, 100);
+
+    // 追踪最佳分辨率（使用性价比百分比）
+    if (percentage > maxPercentage) {
+        maxPercentage = percentage;
+        bestRes = res;
+    }
+
+    // 4. 计算推荐刷新率
+    // 基准公式: 总帧率 / 3 (模拟竞技向需求)
+    const baseFps = totalFps / 3;
+    let recommendHz = 120; // 兜底逻辑：默认 120Hz
+
+    // 匹配标准档位
+    for (const rate of standardRates) {
+        if (baseFps >= rate) {
+            recommendHz = rate;
+            break;
+        }
+    }
+    // 如果基准帧率 < 144，保持默认的 120Hz (或根据需要调整为60Hz)
+
+    // 生成描述文案
+    let desc = '';
+    if (res === '1080P') desc = '极致流畅，电竞首选';
+    else if (res === '2K') desc = '画质与流畅的平衡';
+    else desc = '画质优先，细腻体验';
+
+    if (recommendHz < 144) {
+        desc = '画质优先，帧率一般';
+    }
+
+    return {
+        resolution: res,
+        refreshRate: recommendHz + 'Hz',
+        ratio: ratio,
+        percentage: percentage,
+        desc: desc,
+        isBest: false // 后续更新
+    };
+  });
+
+  // 标记最佳选项
+  const options = calculatedOptions.map(opt => {
+      if (opt.resolution === bestRes) {
+          return {
+              ...opt,
+              isBest: true,
+              desc: '性价比最高且帧率极佳'
+          };
+      }
+      return opt;
+  });
+
+  const bestChoice = options.find(o => o.isBest);
+
+  return {
+      bestChoice: {
+          resolution: bestChoice.resolution,
+          refreshRate: bestChoice.refreshRate,
+          reason: '综合配置性能与预算的最佳搭配'
+      },
+      options: options
+  };
+});
+// END: 新增 - 显示器智能推荐逻辑
+
+// 计算瓶颈类型：根据当前分辨率下的CPU和GPU理论帧率
+const bottleneckInfo = computed(() => {
+    if(!assessResult.value || !assessResult.value.games || assessResult.value.games.length === 0) {
+        return null;
+    }
+    
+    // 取第一款游戏的数据作为参考（所有游戏应该结果一致）
+    const game = assessResult.value.games[0];
+    if(!game.cpuFps || !game.gpuFps) {
+        return null;
+    }
+    
+    const cpuFps = game.cpuFps[currentResolution.value] || 0;
+    const gpuFps = game.gpuFps[currentResolution.value] || 0;
+    
+    if(cpuFps <= 0 || gpuFps <= 0) {
+        return null;
+    }
+    
+    // 计算比例
+    const cpuRatio = cpuFps / gpuFps;
+    const gpuRatio = gpuFps / cpuFps;
+    
+    // 30%阈值
+    const threshold = 1.3;
+    
+    if(cpuRatio >= threshold) {
+        // CPU帧率比GPU高30%以上，显卡瓶颈
+        return {
+            type: 'gpu',
+            message: '当前配置存在显卡瓶颈',
+            // 优化点：增加建议用户降低分辨率的提示
+            detail: `CPU理论帧率(${cpuFps} FPS)比显卡理论帧率(${gpuFps} FPS)高${((cpuRatio - 1) * 100).toFixed(0)}%，建议升级显卡以充分发挥CPU性能。您也可以尝试降低游戏分辨率或画质以缓解瓶颈。`
+        };
+    } else if(gpuRatio >= threshold) {
+        // GPU帧率比CPU高30%以上，CPU瓶颈
+        return {
+            type: 'cpu',
+            message: '当前配置存在CPU瓶颈',
+            detail: `显卡理论帧率(${gpuFps} FPS)比CPU理论帧率(${cpuFps} FPS)高${((gpuRatio - 1) * 100).toFixed(0)}%，建议升级CPU以充分发挥显卡性能`
+        };
+    }
+    
+    // 无明显瓶颈
+    return {
+        type: 'balanced',
+        message: '当前配置较为平衡',
+        detail: `CPU理论帧率(${cpuFps} FPS)与显卡理论帧率(${gpuFps} FPS)比例协调，没有明显的性能瓶颈`
+    };
+});
+// 雷达图数据计算
+const radarData = computed(() => {
+  if(!assessResult.value) return null;
+  
+  // 获取各维度数据
+  const cpuScore = assessResult.value.cpuBaseScore || 0;
+  const gpuScore = activeHardware.gpu?.performanceScore || 0;
+  const memoryScore = assessResult.value.memoryScore || 0;
+  const totalScore = assessResult.value.totalScore || 0;
+  
+  // 检查是否填写了内存
+  const hasMemory = form.ramFrequency && form.ramFrequency > 0;
+  
+  // 检查是否填写了价格
+  const hasPrice = form.totalPrice > 0;
+  
+  // 优化点：性价比维度直接使用计算好的百分比 (0-100)
+  // 如果没有价格，性价比为0
+  const costPerfValue = (hasPrice && cpData.value) ? Number(cpData.value.percentage) : 0;
+  
+  // 固定为五边形雷达图，动态调整显示的维度
+  // 优化点：性价比 Max 设为 100，与其他维度统一量纲（虽然其他是绝对值，但性价比我们用百分比展示更好）
+  const dimensions = [
+    { name: 'CPU性能', value: cpuScore, max: 9907, show: true },
+    { name: '显卡性能', value: gpuScore, max: 14480, show: true },
+    { name: '内存性能', value: memoryScore, max: 4000, show: hasMemory },
+    { name: '整机跑分', value: totalScore, max: 28387, show: true },
+    { name: '性价比', value: costPerfValue, max: 100, show: hasPrice }
+  ];
+  
+  return dimensions;
+});
+
+// 初始化雷达图
+function initRadarChart() {
+  if(!radarChartRef.value) return;
+  
+  // 初始化雷达图实例
+  radarChartInstance = markRaw(echarts.init(radarChartRef.value));
+  
+  // 更新雷达图数据
+  updateRadarChart();
+}
+
+// 更新雷达图
+function updateRadarChart() {
+  if(!radarChartInstance || !radarData.value) return;
+  
+  // 固定为五边形雷达图，提取所有维度配置
+  const indicator = radarData.value.map(item => ({
+    name: item.name,
+    max: item.max
+  }));
+  
+  // 提取数据，根据show属性决定是否显示
+  const values = radarData.value.map(item => item.show ? item.value : 0);
+  
+  // 设置雷达图选项
+  const option = {
+    backgroundColor: 'transparent',
+    radar: {
+      indicator: indicator,
+      shape: 'polygon',
+      splitNumber: 5,
+      axisName: {
+        color: '#606266',
+        fontSize: 12
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#e4e7ed'
+        }
+      },
+      splitArea: {
+        show: true,
+        areaStyle: {
+          color: ['#f9f9f9', '#f0f0f0']
+        }
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#dcdfe6'
+        }
+      }
+    },
+    series: [{
+      name: '配置评分',
+      type: 'radar',
+      data: [{
+        value: values,
+        name: '当前配置',
+        areaStyle: {
+          color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [
+            { color: 'rgba(99, 102, 241, 0.3)', offset: 0 },
+            { color: 'rgba(99, 102, 241, 0.1)', offset: 1 }
+          ])
+        },
+        lineStyle: {
+          color: '#6366f1',
+          width: 2
+        },
+        itemStyle: {
+          color: '#6366f1',
+          borderWidth: 2,
+          borderColor: '#fff'
+        },
+        // 标签显示配置
+        label: {
+          show: true,
+          formatter: (params) => {
+            // 只显示有数据的维度标签
+            const dimension = radarData.value[params.dataIndex];
+            if (!dimension.show) return '';
+            
+            // 特殊处理性价比标签，加上 %
+            if (dimension.name === '性价比') {
+                return params.value.toFixed(0) + '分';
+            }
+            return params.value.toFixed(0);
+          }
+        }
+      }]
+    }]
+  };
+  
+  // 更新雷达图
+  radarChartInstance.setOption(option);
+}
+
+// 监听评估结果变化，更新雷达图
+watch(
+  [() => assessResult.value, () => currentResolution.value],
+  () => {
+    if(radarChartInstance) {
+      updateRadarChart();
+    } else if(assessResult.value) {
+      // 使用nextTick确保DOM渲染完成后再初始化雷达图
+      nextTick(() => {
+        initRadarChart();
+      });
+    }
+  },
+  { deep: true }
+);
+
+// END: 新增 - 性价比计算逻辑
 
 async function loadData() {
   try {
@@ -911,6 +1375,26 @@ onMounted(() => {
   // 明确设置每页显示5条
   queryParams.pageSize = 5;
   if (isLogin.value) getList();
+  
+  // 初始化雷达图
+  if(assessResult.value) {
+    initRadarChart();
+  }
+});
+
+// 监听窗口大小变化，重绘雷达图
+window.addEventListener('resize', () => {
+  if(radarChartInstance) {
+    radarChartInstance.resize();
+  }
+});
+
+// 组件卸载时销毁雷达图实例
+onUnmounted(() => {
+  if(radarChartInstance) {
+    radarChartInstance.dispose();
+    radarChartInstance = null;
+  }
 });
 </script>
 
@@ -1044,8 +1528,18 @@ onMounted(() => {
 }
 
 .option-item {
-  .option-main { font-weight: 500; display: block; }
-  .option-sub { font-size: 11px; color: #9ca3af; }
+  /* 确保内部容器是块级，并且有合适的间距 */
+  width: 100%;
+  
+  .option-main { font-weight: 500; display: block; line-height: 1.4; }
+  .option-sub {
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: right;  /* 添加靠右对齐 */
+    display: block;      /* 确保是块级元素 */
+    margin-top: 2px;     /* 添加一点间距 */
+    line-height: 1.2;
+  }
 }
 
 .row-icon {
@@ -1148,12 +1642,12 @@ onMounted(() => {
   background: linear-gradient(to bottom, #ffffff 0%, #fafafa 100%);
 }
 
-.perf-header .title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-
 .score-card-main {
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+  padding: 30px 0;
+  margin: 0;
+  border-bottom: 1px dashed #e5e7eb;
   text-align: center;
-  margin: 30px 0;
-  position: relative;
   
   .score-label { font-size: 14px; color: #64748b; margin-bottom: 4px; }
   .score-number { 
@@ -1169,10 +1663,203 @@ onMounted(() => {
   .score-desc { font-size: 12px; color: #94a3b8; }
 }
 
+/* 雷达图样式 */
+.radar-chart-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.radar-chart {
+  width: 100%;
+  height: 300px;
+  min-height: 250px;
+}
+
+@media (max-width: 768px) {
+  .radar-chart {
+    height: 250px;
+  }
+}
+
 .resolution-switch {
   display: flex;
   justify-content: center;
   margin-bottom: 30px;
+}
+
+/* 显示器推荐区域样式 (新增) */
+.monitor-recommend-section {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 20px 0;
+  border: 1px solid #e2e8f0;
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .best-choice-card {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border-radius: 8px;
+    padding: 12px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+
+    .badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #facc15;
+      color: #92400e;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-bottom-left-radius: 8px;
+    }
+
+    .choice-content {
+      .res-hz {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        margin-bottom: 4px;
+        .res { font-size: 20px; font-weight: 700; }
+        .divider { opacity: 0.6; }
+        .hz { font-size: 16px; font-weight: 500; }
+      }
+      .reason { font-size: 12px; opacity: 0.9; }
+    }
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+
+    .option-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+
+      &:hover {
+        border-color: #6366f1;
+        transform: translateY(-2px);
+      }
+
+      &.active {
+        border-color: #6366f1;
+        background: #eef2ff;
+        .opt-res { color: #4f46e5; }
+      }
+
+      .opt-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 4px;
+        .opt-res { font-weight: 700; font-size: 13px; color: #1e293b; }
+        .opt-hz { font-size: 11px; color: #64748b; }
+      }
+      
+      .opt-desc {
+        font-size: 10px;
+        color: #94a3b8;
+        text-align: center;
+        line-height: 1.2;
+        transform: scale(0.9);
+      }
+
+      .best-mark {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #facc15;
+        color: #854d0e;
+        font-size: 9px;
+        padding: 1px 4px;
+        border-radius: 4px;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+/* 性价比区域样式优化 */
+.cp-section {
+  padding: 0 10px 20px;
+  .cp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    .cp-title {
+       display: flex; align-items: center; gap: 4px; color: #606266; font-size: 14px;
+       .info-icon { font-size: 14px; color: #909399; cursor: pointer; }
+    }
+    .cp-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .cp-value { font-weight: 700; font-size: 16px; .unit { font-size: 12px; opacity: 0.8; } }
+  }
+  
+  .penalty-tip {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #f56c6c;
+    background: #fef0f0;
+    padding: 6px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+}
+
+/* 瓶颈警告 */
+.bottleneck-warning {
+  margin: 0 16px 20px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 12px;
+  
+  &.balanced {
+    background: #ecfdf5;
+    border-color: #6ee7b7;
+    .warning-title { color: #047857; }
+    .warning-detail { color: #065f46; }
+  }
+  
+  .warning-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    .warning-title { font-weight: 700; font-size: 14px; color: #b45309; }
+  }
+  .warning-detail { font-size: 12px; color: #92400e; line-height: 1.5; padding-left: 24px; }
 }
 
 .games-list {
@@ -1222,5 +1909,17 @@ onMounted(() => {
 @media (max-width: 768px) {
   .hardware-row { flex-direction: column; align-items: stretch; }
   .footer-bar { flex-direction: column; gap: 15px; text-align: center; }
+}
+</style>
+
+<!-- 全局样式，用于控制下拉框（popper）的样式 -->
+<style lang="scss">
+.hardware-select-dropdown {
+  .el-select-dropdown__item {
+    height: auto !important;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    line-height: normal;
+  }
 }
 </style>
