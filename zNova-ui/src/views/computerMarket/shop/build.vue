@@ -40,19 +40,19 @@
               <span class="divider-line"></span>
             </div>
 
+            <!-- CPU Row -->
             <div class="hardware-row-wrapper">
               <el-row :gutter="12" class="hardware-row" align="middle">
                 <el-col :span="2" class="row-icon">
                   <el-tag effect="dark" type="primary" round>CPU</el-tag>
                 </el-col>
-                <el-col :span="9">
+                <el-col :span="11">
                   <el-form-item prop="cpuModel" label-width="0" class="mb-0">
-                    <!-- 修复：添加 popper-class 以便控制下拉框样式 -->
                     <el-select 
                       v-model="activeHardware.cpu"
                       value-key="id"
                       filterable 
-                      placeholder="选择处理器型号" 
+                      placeholder="选择处理器型号 (支持搜索)" 
                       style="width: 100%"
                       @change="handleCpuChange"
                       popper-class="hardware-select-dropdown"
@@ -71,15 +71,15 @@
                     </el-select>
                   </el-form-item>
                 </el-col>
-                <el-col :span="7">
+                <el-col :span="4" class="info-col" style="text-align: center;">
+                   <el-tag v-if="form.cpuTdp" type="warning" effect="plain" size="small" round><el-icon><Lightning /></el-icon> {{ form.cpuTdp }}W</el-tag>
+                </el-col>
+                <el-col :span="5">
                   <el-form-item prop="cpuPrice" label-width="0" class="mb-0">
                     <el-input-number v-model="form.cpuPrice" :min="0" :precision="2" :controls="false" style="width: 100%" placeholder="价格" class="price-input">
                        <template #prefix>¥</template>
                     </el-input-number>
                   </el-form-item>
-                </el-col>
-                <el-col :span="4" class="info-col">
-                   <span class="tdp-tag" v-if="form.cpuTdp"><el-icon><Lightning /></el-icon> {{ form.cpuTdp }}W</span>
                 </el-col>
                 <el-col :span="2" class="status-col">
                   <StatusIcon :issues="getIssues('cpu')" />
@@ -87,30 +87,25 @@
               </el-row>
             </div>
 
+            <!-- Mobo Row (Merged Brand/Series) -->
             <div class="hardware-row-wrapper">
               <el-row :gutter="12" class="hardware-row" align="middle">
                  <el-col :span="2" class="row-icon">
                   <el-tag effect="dark" type="warning" round>主板</el-tag>
                 </el-col>
-                <el-col :span="4">
+                <el-col :span="9">
                   <el-form-item prop="moboBrand" label-width="0" class="mb-0">
-                    <el-input v-model="form.moboBrand" placeholder="品牌" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="4">
-                  <el-form-item prop="moboSeries" label-width="0" class="mb-0">
-                    <el-input v-model="form.moboSeries" placeholder="系列" />
+                    <el-input v-model="form.moboBrand" placeholder="具体型号 (如: 华硕 TUF B760M 重炮手)" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="6">
                   <el-form-item prop="moboModel" label-width="0" class="mb-0">
-                    <!-- 修复：添加 popper-class -->
                     <el-select 
                       v-model="activeHardware.mobo"
                       value-key="id" 
                       filterable 
                       default-first-option
-                      placeholder="芯片组型号" 
+                      placeholder="芯片组" 
                       style="width: 100%"
                       @change="handleMoboChange"
                       popper-class="hardware-select-dropdown"
@@ -129,7 +124,7 @@
                     </el-select>
                   </el-form-item>
                 </el-col>
-                <el-col :span="6">
+                <el-col :span="5">
                   <el-form-item prop="moboPrice" label-width="0" class="mb-0">
                     <el-input-number v-model="form.moboPrice" :min="0" :precision="2" :controls="false" style="width: 100%" placeholder="价格" class="price-input">
                       <template #prefix>¥</template>
@@ -142,14 +137,15 @@
               </el-row>
             </div>
 
+            <!-- RAM Row -->
             <div class="hardware-row-wrapper">
               <el-row :gutter="12" class="hardware-row" align="middle">
                  <el-col :span="2" class="row-icon">
                   <el-tag effect="dark" type="danger" round>内存</el-tag>
                 </el-col>
-                <el-col :span="4">
+                <el-col :span="5">
                   <el-form-item prop="ramBrand" label-width="0" class="mb-0">
-                    <el-input v-model="form.ramBrand" placeholder="品牌" />
+                    <el-input v-model="form.ramBrand" placeholder="品牌型号" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="3">
@@ -172,9 +168,9 @@
                     </el-select>
                   </el-form-item>
                 </el-col>
-                <el-col :span="4">
+                <el-col :span="3">
                   <el-form-item label-width="0" class="mb-0">
-                     <el-input v-model="form.ramCapacity" placeholder="容量 (如16G*2)" />
+                     <el-input v-model="form.ramCapacity" placeholder="容量(16G*2)" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="5">
@@ -190,24 +186,19 @@
               </el-row>
             </div>
 
+            <!-- GPU Row (Merged Brand/Series) -->
             <div class="hardware-row-wrapper">
               <el-row :gutter="12" class="hardware-row" align="middle">
                  <el-col :span="2" class="row-icon">
                   <el-tag effect="dark" type="success" round>显卡</el-tag>
                 </el-col>
-                <el-col :span="4">
+                <el-col :span="9">
                   <el-form-item prop="gpuBrand" label-width="0" class="mb-0">
-                    <el-input v-model="form.gpuBrand" placeholder="品牌" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="4">
-                  <el-form-item prop="gpuSeries" label-width="0" class="mb-0">
-                    <el-input v-model="form.gpuSeries" placeholder="系列" />
+                    <el-input v-model="form.gpuBrand" placeholder="具体型号 (如: 七彩虹 iGame Ultra W)" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="6">
                   <el-form-item prop="gpuModel" label-width="0" class="mb-0">
-                    <!-- 修复：添加 popper-class -->
                     <el-select 
                       v-model="activeHardware.gpu"
                       value-key="id" 
@@ -231,7 +222,7 @@
                     </el-select>
                   </el-form-item>
                 </el-col>
-                <el-col :span="6">
+                <el-col :span="5">
                   <el-form-item prop="gpuPrice" label-width="0" class="mb-0">
                     <el-input-number v-model="form.gpuPrice" :min="0" :precision="2" :controls="false" style="width: 100%" placeholder="价格" class="price-input">
                       <template #prefix>¥</template>
@@ -280,19 +271,15 @@
               </el-row>
             </div>
 
+            <!-- PSU Row (Merged Brand/Series) -->
             <div class="hardware-row-wrapper">
               <el-row :gutter="12" class="hardware-row" align="middle">
                  <el-col :span="2" class="row-icon">
                   <el-tag effect="light" type="warning" round>电源</el-tag>
                 </el-col>
-                <el-col :span="4">
+                <el-col :span="9">
                   <el-form-item prop="psuBrand" label-width="0" class="mb-0">
-                    <el-input v-model="form.psuBrand" placeholder="品牌" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="4">
-                  <el-form-item prop="psuSeries" label-width="0" class="mb-0">
-                    <el-input v-model="form.psuSeries" placeholder="系列" />
+                    <el-input v-model="form.psuBrand" placeholder="具体型号 (如: 长城 X6 金牌全模组)" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="6">
@@ -314,7 +301,7 @@
                     </el-select>
                   </el-form-item>
                 </el-col>
-                <el-col :span="6">
+                <el-col :span="5">
                   <el-form-item prop="psuPrice" label-width="0" class="mb-0">
                     <el-input-number v-model="form.psuPrice" :min="0" :precision="2" :controls="false" style="width: 100%" placeholder="价格" class="price-input">
                       <template #prefix>¥</template>
@@ -458,6 +445,68 @@
     
           </div>
          
+        </el-card>
+
+        <!-- 智能商品推荐模块 -->
+        <el-card class="modern-card mt-4 recommend-card">
+          <template #header>
+            <div class="card-header">
+              <span>🎯 性能相近的成品推荐</span>
+            </div>
+          </template>
+          
+          <div v-if="recommendList.length === 0" class="empty-state">
+            <el-empty description="暂无推荐商品" :image-size="120" />
+          </div>
+          
+          <el-row :gutter="20" v-else>
+            <el-col :span="6" v-for="product in recommendList" :key="product.productId">
+              <div class="product-card">
+                <div class="product-image">
+                  <img :src="product.imageUrl" :alt="product.productName" />
+                  <div class="product-tag" :class="getProductTagClass(product.productType)">
+                    {{ getProductTagText(product.productType) }}
+                  </div>
+                </div>
+                <div class="product-info">
+                  <div class="product-name">{{ product.productName }}</div>
+                  <div class="product-match-rate">
+                    <el-tag :type="getMatchRateType(calculateMatchRate(product.performanceScore, assessResult.totalScore))">
+                      {{ calculateMatchRate(product.performanceScore, assessResult.totalScore) }}% 相似
+                    </el-tag>
+                  </div>
+                  <div class="product-hardware">{{ product.cpu }} + {{ product.gpuModel }}</div>
+                  <div class="product-price">
+                    <template v-if="product.productType === '1'">
+                      <span class="currency">¥</span>
+                      <span class="amount">{{ product.rentPrice || 0 }}</span>
+                      <span class="unit">/天</span>
+                    </template>
+                    <template v-else-if="product.productType === '3'">
+                      <div class="price-row">
+                        <span class="price-label">租金:</span>
+                        <span class="currency">¥</span>
+                        <span class="amount">{{ product.rentPrice || 0 }}</span>
+                        <span class="unit">/天</span>
+                      </div>
+                      <div class="price-row">
+                        <span class="price-label">售价:</span>
+                        <span class="currency">¥</span>
+                        <span class="amount">{{ product.salePrice || 0 }}</span>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <span class="currency">¥</span>
+                      <span class="amount">{{ product.salePrice || 0 }}</span>
+                    </template>
+                  </div>
+                  <el-button type="primary" size="small" @click="viewProductDetail(product)" class="view-detail-btn">
+                  立即支付
+                  </el-button>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
         </el-card>
       </el-col>
 
@@ -628,6 +677,7 @@ import {
 } from '@/api/front/hardware';
 import { addUserBuild, listUserBuild, updateUserBuild, delUserBuild } from '@/api/front/userBuild';
 import { assessPerformance } from '@/api/front/performance';
+import { listSimilarProducts } from '@/api/market/product';
 import useUserStore from '@/store/modules/user'; 
 import { useRouter } from 'vue-router';
 import Header from '../Header.vue';
@@ -684,6 +734,10 @@ const queryParams = reactive({
   pageSize: 5,
   title: undefined
 });
+
+// 商品推荐数据
+const recommendList = ref([]);
+const debounceTimer = ref(null);
 
 // 选中的硬件详细对象
 const activeHardware = reactive({
@@ -1234,7 +1288,11 @@ function handleLoadBuild(row) {
   ) || null;
   activeHardware.psu = psuOptions.value.find(i => i.wattage == row.psuWattage) || null;
 
+  // 先调用handleRamTypeChange来设置filteredRamOptions
   handleRamTypeChange(form.ramInterface);
+  // 然后再设置ramFrequency，这样就不会被重置了
+  form.ramFrequency = row.ramFrequency;
+  
   ElMessage.success("已加载配置：" + row.title);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1331,6 +1389,106 @@ function getFpsColor(fps) {
   return '#f56c6c';
 }
 
+// 相似度计算函数
+function calculateMatchRate(productScore, userScore) {
+  if (userScore <= 0) return 0;
+  const rate = 100 - (Math.abs(productScore - userScore) / userScore * 100);
+  return Math.min(Math.round(rate), 100);
+}
+
+// 获取相似度标签类型
+function getMatchRateType(rate) {
+  if (rate >= 95) return 'danger';
+  if (rate >= 85) return 'primary';
+  return 'info';
+}
+
+// 获取商品标签类名
+function getProductTagClass(productType) {
+  if (productType === '1') return 'tag-rent';
+  return 'tag-sale';
+}
+
+// 获取商品标签文本
+function getProductTagText(productType) {
+  if (productType === '1') return '租赁';
+  if (productType === '3') return '租售';
+  return '售卖';
+}
+
+// 获取推荐商品
+function getRecommendProducts(score) {
+  if (debounceTimer.value) {
+    clearTimeout(debounceTimer.value);
+  }
+  debounceTimer.value = setTimeout(async () => {
+    if (score > 0) {
+      try {
+        const res = await listSimilarProducts(score);
+        console.log("推荐商品原始数据:", res.data);
+        recommendList.value = res.data || [];
+        console.log("推荐商品处理后数据:", recommendList.value);
+      } catch (error) {
+        console.error("获取推荐商品失败:", error);
+      }
+    }
+  }, 300);
+}
+
+// 查看商品详情
+function viewProductDetail(product) {
+  // 检查用户是否登录
+  const token = localStorage.getItem('app_token');
+  if (!token) {
+    ElMessage.warning('请先登录');
+    // 将商品信息存储到sessionStorage，登录后可以获取
+    sessionStorage.setItem('pendingProduct', JSON.stringify({
+      productId: product.productId,
+      productName: product.productName,
+      productImg: product.imageUrl,
+      price: product.price || 0,
+      businessType: product.businessType || '0', // 默认为购买
+      quantity: 1,
+      daterange: [],
+      rentDays: 0
+    }));
+    router.push('/portal/login?redirect=' + encodeURIComponent('/computer-market/checkout'));
+    return;
+  }
+  
+  // 构建完整的商品数据，与mallHome.vue保持一致
+  const productData = {
+    productId: product.productId,
+    productName: product.productName,
+    productImg: product.imageUrl,
+    price: product.price || 0,
+    businessType: product.businessType || '0', // 默认为购买
+    quantity: 1,
+    daterange: [],
+    rentDays: 0
+  };
+  
+  // 直接跳转到结算页面，并传递完整的商品信息
+  router.push({
+    path: '/computer-market/checkout',
+    query: {
+      directBuy: 'true',
+      product: encodeURIComponent(JSON.stringify(productData))
+    }
+  });
+}
+
+// 监听评估结果变化
+watch(
+  () => assessResult.value,
+  (newVal) => {
+    if (newVal && newVal.totalScore > 0) {
+      getRecommendProducts(newVal.totalScore);
+    }
+  },
+  { deep: true }
+);
+
 function submitForm() {
   if (!isLogin.value) {
      ElMessageBox.confirm('登录后即可保存您的配置单，是否前往登录？', '温馨提示', {
@@ -1360,11 +1518,20 @@ function submitForm() {
   });
 }
 
+// 修改后的重置逻辑，确保新合并的字段能被清空
 function resetForm() {
   if (formRef.value) formRef.value.resetFields();
   form.buildId = null;
   form.cpuTdp = 0;
   form.totalPrice = 0;
+  
+  // 确保清空合并后的字段
+  form.moboBrand = '';
+  form.gpuBrand = '';
+  form.psuBrand = '';
+  form.ramBrand = '';
+  form.ramCapacity = '';
+  
   assessResult.value = null;
   currentResolution.value = '1080P';
   Object.keys(activeHardware).forEach(k => activeHardware[k] = null);
@@ -1485,45 +1652,65 @@ onUnmounted(() => {
   }
 }
 
-/* 硬件行容器 */
+/* 硬件行容器优化 */
 .hardware-row-wrapper {
   margin-bottom: 8px;
 }
 
 .hardware-row {
-  padding: 12px 10px;
+  padding: 14px 10px; /* 增加一点垂直内边距 */
   border-radius: 12px;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
+  background-color: #fff; /* 默认白色背景 */
+  margin-bottom: 2px;
 
   &:hover {
-    background-color: #fff;
-    border-color: #e5e7eb;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    background-color: #f8fafc; /* 悬停时微微变灰，突出显示 */
+    border-color: #dbeafe; /* 边框变蓝 */
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08); /* 增加投影 */
     transform: translateY(-1px);
+    z-index: 1;
   }
-
-  /* 输入框微调 */
+  
+  /* 针对合并后的输入框样式优化 */
   :deep(.el-input__wrapper), :deep(.el-select__wrapper) {
-    box-shadow: none;
-    background-color: transparent;
-    border-bottom: 1px solid #e5e7eb;
-    border-radius: 0;
-    padding-left: 0;
-    
-    &.is-focus {
-       box-shadow: none !important;
+     box-shadow: none !important;
+     background-color: transparent;
+     padding-left: 0;
+     border-bottom: 1px solid #e5e7eb;
+     border-radius: 0;
+     transition: border-color 0.3s;
+     
+     &.is-focus {
        border-color: #6366f1;
+     }
+  }
+  
+  /* 去除输入框原本的边框，只保留底部线条，更有科技感 */
+  :deep(.el-input__inner) {
+    font-weight: 500;
+    color: #374151;
+    
+    &::placeholder {
+      font-weight: 400;
+      color: #9ca3af;
+      font-size: 13px;
     }
   }
 
-  /* 价格输入框特殊处理 */
+  /* 价格输入框样式 */
   .price-input :deep(.el-input__wrapper) {
-    border-bottom: none;
-    background: #f3f4f6;
+    border: none;
+    background: #f1f5f9;
     border-radius: 6px;
-    padding: 0 8px;
+    padding: 0 10px;
     height: 32px;
+    box-shadow: none !important;
+    
+    &:hover {
+      background: #e2e8f0;
+    }
   }
 }
 
@@ -1559,6 +1746,13 @@ onUnmounted(() => {
 }
 
 .mb-0 { margin-bottom: 0 !important; }
+
+/* 状态图标列居中 */
+.status-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 /* 底部结算条 */
 .footer-bar {
@@ -1897,6 +2091,143 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
   min-height: 400px;
+}
+
+/* ---------------- 商品推荐模块样式 ---------------- */
+.recommend-card {
+  margin-top: 24px;
+  
+  .empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    padding: 40px 0;
+  }
+  
+  .product-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+      border-color: #cbd5e1;
+    }
+  }
+  
+  .product-image {
+    width: 100%;
+    height: 120px;
+    overflow: hidden;
+    background: #ffffff;
+    position: relative;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    &:hover img {
+      transform: scale(1.05);
+    }
+  }
+  
+  .product-tag {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    z-index: 1;
+  }
+  
+  .tag-rent { 
+    background: linear-gradient(135deg, #a0cfff 0%, #409eff 100%); 
+  }
+  
+  .tag-sale { 
+    background: linear-gradient(135deg, #fab6b6 0%, #f56c6c 100%); 
+  }
+  
+  .product-info {
+    padding: 12px;
+  }
+  
+  .product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .product-match-rate {
+    margin-bottom: 8px;
+  }
+  
+  .product-hardware {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .product-price {
+    margin-bottom: 12px;
+    
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      margin-bottom: 4px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+    
+    .price-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-right: 4px;
+      min-width: 30px;
+    }
+    
+    .currency {
+      font-size: 12px;
+      color: #ef4444;
+      font-weight: 500;
+    }
+    
+    .amount {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ef4444;
+      margin: 0 2px;
+    }
+    
+    .unit {
+      font-size: 10px;
+      color: #6b7280;
+    }
+  }
+  
+  .view-detail-btn {
+    width: 100%;
+    font-size: 12px;
+  }
 }
 
 /* ---------------- 表格样式 ---------------- */

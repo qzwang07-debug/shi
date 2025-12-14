@@ -1,10 +1,12 @@
 package com.zNova.system.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.zNova.common.core.controller.BaseController;
 import com.zNova.common.core.domain.AjaxResult;
@@ -44,5 +46,18 @@ public class FrontProductController extends BaseController
     public AjaxResult getInfo(@PathVariable("id") Long id)
     {
         return success(bizProductService.selectBizProductById(id));
+    }
+
+    /**
+     * 根据性能分数查询相似商品
+     */
+    @GetMapping("/similar")
+    public AjaxResult getSimilarProducts(@RequestParam Integer score)
+    {
+        if (score == null || score == 0) {
+            return success(new ArrayList<>());
+        }
+        List<BizProduct> list = bizProductService.selectProductListByScoreNear(score);
+        return success(list);
     }
 }

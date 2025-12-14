@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.zNova.system.mapper.HardwareCpuMapper">
-    
+
     <resultMap type="HardwareCpu" id="HardwareCpuResult">
         <result property="id"    column="id"    />
         <result property="brand"    column="brand"    />
@@ -22,18 +22,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectHardwareCpuList" parameterType="HardwareCpu" resultMap="HardwareCpuResult">
         <include refid="selectHardwareCpuVo"/>
-        <where>  
+        <where>
             <if test="brand != null  and brand != ''"> and brand = #{brand}</if>
             <if test="model != null  and model != ''"> and model like concat('%', #{model}, '%')</if>
             <if test="socketType != null  and socketType != ''"> and socket_type = #{socketType}</if>
         </where>
     </select>
-    
+
     <select id="selectHardwareCpuById" parameterType="Long" resultMap="HardwareCpuResult">
         <include refid="selectHardwareCpuVo"/>
         where id = #{id}
     </select>
-    <select id="selectHardwareCpuByModel" parameterType="String" resultType="HardwareCpu">
+    <select id="selectHardwareCpuByModel" parameterType="String" resultMap="HardwareCpuResult">
         select * from hardware_cpu where model = #{model}
     </select>
     <insert id="insertHardwareCpu" parameterType="HardwareCpu" useGeneratedKeys="true" keyProperty="id">
@@ -47,7 +47,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="tdp != null">tdp,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateTime != null">update_time,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="brand != null and brand != ''">#{brand},</if>
             <if test="model != null and model != ''">#{model},</if>
@@ -57,7 +57,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="tdp != null">#{tdp},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateTime != null">#{updateTime},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateHardwareCpu" parameterType="HardwareCpu">
@@ -80,7 +80,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteHardwareCpuByIds" parameterType="String">
-        delete from hardware_cpu where id in 
+        delete from hardware_cpu where id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>

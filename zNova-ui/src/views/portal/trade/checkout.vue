@@ -323,8 +323,23 @@ const init = async () => {
 
   const directBuy = route.query.directBuy === 'true';
   const productStr = route.query.product;
-
-  if (directBuy && productStr) {
+  
+  // 检查是否有从build页面传递过来的商品信息
+  const productId = route.query.productId;
+  const productName = route.query.productName;
+  
+  // 如果有从build页面传递的商品信息，则使用它
+  if (productId && productName) {
+    checkoutList.value = [{
+      productId: productId,
+      productName: productName,
+      quantity: 1,
+      price: 0, // 需要从后端获取价格
+      businessType: '0', // 默认为购买
+      daterange: [],
+      rentDays: 0
+    }];
+  } else if (directBuy && productStr) {
     try {
       const productData = JSON.parse(decodeURIComponent(productStr));
       checkoutList.value = [productData];
@@ -336,25 +351,41 @@ const init = async () => {
   } else {
     const cartIdsStr = route.query.ids;
     if (!cartIdsStr) {
-      ElMessage.error("未选择商品");
-      router.push('/computer-market/cart');
-      return;
-    }
-    const cartIdArr = cartIdsStr.split(',').map(Number);
+      // 检查是否有sessionStorage中存储的商品信息
+       const pendingProduct = sessionStorage.getItem('pendingProduct');
+       if (pendingProduct) {
+         try {
+           const productData = JSON.parse(pendingProduct);
+           checkoutList.value = [productData];
+           // 清除sessionStorage中的商品信息
+           sessionStorage.removeItem('pendingProduct');
+         } catch (error) {
+           ElMessage.error("商品数据错误");
+           router.push('/computer-market');
+           return;
+         }
+       } else {
+         ElMessage.error("未选择商品");
+         router.push('/computer-market/cart');
+         return;
+       }
+    } else {
+      const cartIdArr = cartIdsStr.split(',').map(Number);
 
-    try {
-      const res = await listCart();
-      const allItems = res.rows || res.data || [];
-      checkoutList.value = allItems.filter(item => cartIdArr.includes(item.cartId)).map(item => ({
-        ...item,
-        daterange: [],
-        rentDays: 0
-      }));
-      if (checkoutList.value.length === 0) {
-        router.push('/computer-market/cart');
+      try {
+        const res = await listCart();
+        const allItems = res.rows || res.data || [];
+        checkoutList.value = allItems.filter(item => cartIdArr.includes(item.cartId)).map(item => ({
+          ...item,
+          daterange: [],
+          rentDays: 0
+        }));
+        if (checkoutList.value.length === 0) {
+          router.push('/computer-market/cart');
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
     }
   }
 

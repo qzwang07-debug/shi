@@ -41,6 +41,8 @@
         <!-- 添加deptId映射 -->
         <result property="deptId" column="dept_id" />
         <result property="deptName" column="dept_name" />
+        <!-- 性能分数映射 -->
+        <result property="performanceScore" column="performance_score" />
     </resultMap>
 
     <sql id="selectBizProductVo">
@@ -48,7 +50,7 @@
         p.id, p.product_name, p.product_type, p.rent_price, p.sale_price, p.stock_quantity, p.available_rent,
         p.cpu, p.motherboard, p.memory, p.ssd, p.graphics_card, p.cooler, p.power_supply, p.chassis,
         p.image_url, p.status, p.create_by, p.create_time, p.update_by, p.update_time, p.remark,
-        p.gpu_model, p.memory_type, p.memory_frequency, p.dept_id,d.dept_name,
+        p.gpu_model, p.memory_type, p.memory_frequency, p.dept_id, p.performance_score, d.dept_name,
         <!-- 从硬件表获取性能数据 -->
         c.brand as cpuBrand,
         c.single_core_score as cpuSingleCoreScore,
@@ -132,6 +134,7 @@
             <if test="gpuModel != null">gpu_model,</if>
             <if test="memoryType != null">memory_type,</if>
             <if test="memoryFrequency != null">memory_frequency,</if>
+            <if test="performanceScore != null">performance_score,</if>
             <!-- dept_id字段必须插入，不能为空 -->
             dept_id,
         </trim>
@@ -160,6 +163,7 @@
             <if test="gpuModel != null">#{gpuModel},</if>
             <if test="memoryType != null">#{memoryType},</if>
             <if test="memoryFrequency != null">#{memoryFrequency},</if>
+            <if test="performanceScore != null">#{performanceScore},</if>
             <!-- dept_id字段值必须插入 -->
             #{deptId},
         </trim>
@@ -193,6 +197,7 @@
             <if test="gpuModel != null">gpu_model = #{gpuModel},</if>
             <if test="memoryType != null">memory_type = #{memoryType},</if>
             <if test="memoryFrequency != null">memory_frequency = #{memoryFrequency},</if>
+            <if test="performanceScore != null">performance_score = #{performanceScore},</if>
             <!-- 添加dept_id字段更新 -->
             <if test="deptId != null">dept_id = #{deptId},</if>
         </trim>
@@ -233,4 +238,14 @@
         SET stock_quantity = stock_quantity + #{quantity}
         WHERE id = #{id}
     </update>
+
+    <!-- 根据性能分数查询最接近的商品 -->
+    <select id="selectProductListByScoreNear" parameterType="int" resultMap="BizProductResult">
+        <include refid="selectBizProductVo"/>
+        <where>
+            p.status = '0' <!-- 只查询上架状态的商品 -->
+        </where>
+        ORDER BY ABS(p.performance_score - #{targetScore}) ASC
+        LIMIT 4
+    </select>
 </mapper>

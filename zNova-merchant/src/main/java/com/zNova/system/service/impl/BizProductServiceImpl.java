@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.zNova.system.mapper.BizProductMapper;
 import com.zNova.system.domain.BizProduct;
 import com.zNova.system.service.IBizProductService;
+import com.zNova.system.service.PerformanceCalculator;
 import com.zNova.common.core.domain.entity.SysUser;
 
 /**
@@ -23,6 +24,9 @@ public class BizProductServiceImpl implements IBizProductService
 {
     @Autowired
     private BizProductMapper bizProductMapper;
+
+    @Autowired
+    private PerformanceCalculator performanceCalculator;
 
     /**
      * 查询商品
@@ -86,6 +90,14 @@ public class BizProductServiceImpl implements IBizProductService
             }
         }
 
+        // 计算性能分数
+        Integer score = performanceCalculator.calculateScoreByModel(
+                bizProduct.getCpu(),
+                bizProduct.getGpuModel(),
+                bizProduct.getMemoryType(),
+                bizProduct.getMemoryFrequency());
+        bizProduct.setPerformanceScore(score);
+
         return bizProductMapper.insertBizProduct(bizProduct);
     }
 
@@ -103,6 +115,14 @@ public class BizProductServiceImpl implements IBizProductService
 
         // 注意：这里不要写任何 setDeptId 的逻辑
         // 部门的修改完全依赖前端传参（管理员传，商家不传）
+
+        // 计算性能分数
+        Integer score = performanceCalculator.calculateScoreByModel(
+                bizProduct.getCpu(),
+                bizProduct.getGpuModel(),
+                bizProduct.getMemoryType(),
+                bizProduct.getMemoryFrequency());
+        bizProduct.setPerformanceScore(score);
 
         return bizProductMapper.updateBizProduct(bizProduct);
     }
@@ -143,4 +163,15 @@ public class BizProductServiceImpl implements IBizProductService
         return bizProductMapper.selectBizProductList(bizProduct);
     }
 
+    /**
+     * 根据性能分数查询最接近的商品
+     *
+     * @param targetScore 目标性能分数
+     * @return 商品集合
+     */
+    @Override
+    public List<BizProduct> selectProductListByScoreNear(Integer targetScore)
+    {
+        return bizProductMapper.selectProductListByScoreNear(targetScore);
+    }
 }

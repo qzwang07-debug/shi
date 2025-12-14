@@ -66,4 +66,12 @@ public interface IBizProductService
      * @return 商品集合
      */
     public List<BizProduct> selectFrontProductList(BizProduct bizProduct);
+
+    /**
+     * 根据性能分数查询最接近的商品
+     *
+     * @param targetScore 目标性能分数
+     * @return 商品集合
+     */
+    public List<BizProduct> selectProductListByScoreNear(Integer targetScore);
 }

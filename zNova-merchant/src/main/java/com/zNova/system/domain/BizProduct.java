@@ -99,6 +99,10 @@ public class BizProduct extends BaseEntity
     @Excel(name = "部门ID")
     private Long deptId;
 
+    /** 性能分数 */
+    @Excel(name = "性能分数")
+    private Integer performanceScore;
+
     /** CPU品牌（非数据库字段，联表查询） */
     private String cpuBrand;
 
@@ -339,6 +343,16 @@ public class BizProduct extends BaseEntity
         return deptId;
     }
 
+    public void setPerformanceScore(Integer performanceScore)
+    {
+        this.performanceScore = performanceScore;
+    }
+
+    public Integer getPerformanceScore()
+    {
+        return performanceScore;
+    }
+
     public void setCpuBrand(String cpuBrand)
     {
         this.cpuBrand = cpuBrand;
@@ -428,6 +442,7 @@ public class BizProduct extends BaseEntity
                 .append("memoryType", getMemoryType())
                 .append("memoryFrequency", getMemoryFrequency())
                 .append("deptId", getDeptId())
+                .append("performanceScore", getPerformanceScore())
                 .append("cpuBrand", getCpuBrand())
                 .append("cpuSingleCoreScore", getCpuSingleCoreScore())
                 .append("cpuMultiCoreScore", getCpuMultiCoreScore())

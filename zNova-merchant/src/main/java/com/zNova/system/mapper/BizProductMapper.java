@@ -67,6 +67,14 @@ public interface BizProductMapper
      * @return 商品集合
      */
     public List<BizProduct>selectBizProductListWithDeptName (BizProduct bizProduct);
+
+    /**
+     * 根据性能分数查询最接近的商品
+     *
+     * @param targetScore 目标性能分数
+     * @return 商品集合
+     */
+    public List<BizProduct> selectProductListByScoreNear(@Param("targetScore") Integer targetScore);
 // selectBizProductListWithMerchantName
     /**
      * 扣减库存（原子操作，防止超卖）

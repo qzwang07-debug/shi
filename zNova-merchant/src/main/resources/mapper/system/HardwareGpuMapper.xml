@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.zNova.system.mapper.HardwareGpuMapper">
-    
+
     <resultMap type="HardwareGpu" id="HardwareGpuResult">
         <result property="id"    column="id"    />
         <result property="brand"    column="brand"    />
@@ -20,18 +20,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectHardwareGpuList" parameterType="HardwareGpu" resultMap="HardwareGpuResult">
         <include refid="selectHardwareGpuVo"/>
-        <where>  
+        <where>
             <if test="brand != null  and brand != ''"> and brand = #{brand}</if>
             <if test="model != null  and model != ''"> and model like concat('%', #{model}, '%')</if>
         </where>
     </select>
-    
+
     <select id="selectHardwareGpuById" parameterType="Long" resultMap="HardwareGpuResult">
         <include refid="selectHardwareGpuVo"/>
         where id = #{id}
     </select>
 
-    <select id="selectHardwareGpuByModel" parameterType="String" resultType="HardwareGpu">
+    <select id="selectHardwareGpuByModel" parameterType="String" resultMap="HardwareGpuResult">
         select * from hardware_gpu where model = #{model}
     </select>
 
@@ -44,7 +44,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="tdp != null">tdp,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateTime != null">update_time,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="brand != null and brand != ''">#{brand},</if>
             <if test="model != null and model != ''">#{model},</if>
@@ -52,7 +52,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="tdp != null">#{tdp},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateTime != null">#{updateTime},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateHardwareGpu" parameterType="HardwareGpu">
@@ -73,7 +73,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteHardwareGpuByIds" parameterType="String">
-        delete from hardware_gpu where id in 
+        delete from hardware_gpu where id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>

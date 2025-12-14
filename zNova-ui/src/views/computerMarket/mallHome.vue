@@ -127,14 +127,14 @@
               <div class="score-circle">
                 <el-progress 
                   type="dashboard" 
-                  :percentage="product.performanceScore.percentage"
+                  :percentage="product.performanceScore ? Math.min(100, Math.round((product.performanceScore / 28387) * 100)) : 0"
                   :color="customColors"
                   :stroke-width="8"
                   :width="100"
                 >
                   <template #default>
                     <div class="score-inner">
-                      <span class="score-num">{{ product.performanceScore.score }}</span>
+                      <span class="score-num">{{ product.performanceScore || '暂无数据' }}</span>
                       <span class="score-text">性能分</span>
                     </div>
                   </template>
@@ -233,40 +233,14 @@ const addToCart = async (product) => {
 
 const productList = ref([]);
 
-// 性能分数计算逻辑保持不变
-const calculateScore = (product) => {
-  let cpuBaseScore = 0;
-  let memoryScore = 0;
-  const gpuScore = product.gpuScore || 0;
 
-  if (product.cpuBrand === 'AMD') {
-    cpuBaseScore = Math.round((product.cpuMultiCoreScore * 0.5) + product.cpuSingleCoreScore);
-  } else if (product.cpuBrand === 'Intel') {
-    cpuBaseScore = Math.round((product.cpuMultiCoreScore * 0.3) + product.cpuSingleCoreScore);
-  }
-
-  if (product.memoryType === 'DDR4') {
-    memoryScore = product.memoryFrequency ;
-  } else if (product.memoryType === 'DDR5') {
-    memoryScore = product.memoryFrequency/2;
-  }
-
-  const totalScore = cpuBaseScore + memoryScore + gpuScore;
-  const maxScore = 28387;
-  const percentage = Math.min(100, Math.round((totalScore / maxScore) * 100));
-
-  return { score: totalScore, percentage };
-};
 
 const getProductData = async () => {
   try {
     const response = await listFrontProduct({});
     if (response.rows && response.rows.length > 0) {
       const hotProducts = response.rows.filter(product => [1, 2, 3].includes(product.id));
-      productList.value = hotProducts.map(product => ({
-        ...product,
-        performanceScore: calculateScore(product)
-      }));
+      productList.value = hotProducts;
       productList.value.sort((a, b) => a.id - b.id);
     } else {
       productList.value = [];

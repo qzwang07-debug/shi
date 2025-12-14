@@ -189,11 +189,11 @@
                 </div>
                 <div class="perf-content">
                   <el-progress 
-                    :percentage="product.performanceScore.percentage" 
+                    :percentage="product.performanceScore ? Math.min(100, Math.round((product.performanceScore / 28387) * 100)) : 0" 
                     :stroke-width="8"
                     class="performance-bar"
-                    :color="getPerformanceColor(product.performanceScore.percentage)"
-                    :format="(p) => product.performanceScore.score"
+                    :color="getPerformanceColor(product.performanceScore ? Math.min(100, Math.round((product.performanceScore / 28387) * 100)) : 0)"
+                    :format="(p) => product.performanceScore || '暂无数据'"
                   ></el-progress>
                 </div>
               </div>
@@ -344,33 +344,7 @@ const formatMemoryStorage = (product) => {
 
   return `${memoryText} ${storageText}`;
 };
-// 计算性能评分（综合性能）
-const calculateScore = (product) => {
-  let cpuBaseScore = 0;
-  let memoryScore = 0;
-  const gpuScore = product.gpuScore || 0;
 
-  if (product.cpuBrand === 'AMD') {
-    cpuBaseScore = Math.round((product.cpuMultiCoreScore * 0.5) + product.cpuSingleCoreScore);
-  } else if (product.cpuBrand === 'Intel') {
-    cpuBaseScore = Math.round((product.cpuMultiCoreScore * 0.3) + product.cpuSingleCoreScore);
-  }
-
-  if (product.memoryType === 'DDR4') {
-    memoryScore = product.memoryFrequency ;
-  } else if (product.memoryType === 'DDR5') {
-    memoryScore = product.memoryFrequency/2;
-  }
-
-  const totalScore = cpuBaseScore + memoryScore + gpuScore;
-  const maxScore = 28387;
-  const percentage = Math.min(100, Math.round((totalScore / maxScore) * 100));
-
-  return {
-    score: totalScore,
-    percentage
-  };
-};
 
 const getProductData = async () => {
   try {
@@ -383,10 +357,7 @@ const getProductData = async () => {
     
     if (response.rows && response.rows.length > 0) {
       const validProducts = response.rows.filter(product => product.id >= 4);
-      products.value = validProducts.map(product => ({
-        ...product,
-        performanceScore: calculateScore(product)
-      }));
+      products.value = validProducts;
       filterAndSortProducts();
     } else {
       products.value = [];
@@ -464,7 +435,7 @@ const filterAndSortProducts = () => {
   switch (sortType.value) {
     case 'price-low': result.sort((a, b) => (a.rentPrice || 0) - (b.rentPrice || 0)); break;
     case 'price-high': result.sort((a, b) => (b.rentPrice || 0) - (a.rentPrice || 0)); break;
-    case 'performance': result.sort((a, b) => b.performanceScore.percentage - a.performanceScore.percentage); break;
+    case 'performance': result.sort((a, b) => (b.performanceScore || 0) - (a.performanceScore || 0)); break;
     default: result.sort((a, b) => a.id - b.id);
   }
   

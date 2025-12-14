@@ -78,8 +78,8 @@
             </el-form-item>
 
             <div class="form-footer">
-              <router-link class="link-btn" :to="'/login'">
-                <el-icon><Shop /></el-icon> 商家登录
+              <router-link class="link-btn" :to="'/computer-market'">
+                <el-icon><View /></el-icon> 游客访问
               </router-link>
               <el-divider direction="vertical" />
               <router-link class="link-btn highlight" :to="'/portal/register'">
