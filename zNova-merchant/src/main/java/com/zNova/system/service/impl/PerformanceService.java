@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * 游戏帧率评估核心服务
- * @author RuoYi
+ * @author wyz
  */
 @Service
 public class PerformanceService {

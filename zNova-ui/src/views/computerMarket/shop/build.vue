@@ -931,7 +931,7 @@ const cpData = computed(() => {
   if (percentage > 90) level = '极致性价比';
   else if (percentage > 75) level = '物超所值';
   else if (percentage > 50) level = '价格合理';
-  else level = '信仰充值'; // 指溢价高（全是外观件）或配置不合理
+  else level = '土豪专属'; // 指溢价高（全是外观件）或配置不合理
 
   return {
     val: ratio,

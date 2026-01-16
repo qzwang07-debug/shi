@@ -1,0 +1,365 @@
+## Mermaid代码
+
+### 前台项目功能结构
+
+```mermaid
+graph TD
+    A[前台系统] --> B[商城模块]
+    A --> C[用户中心]
+    A --> D[订单操作]
+
+
+    B --> B1[商品详情]
+    B --> B2[交易模块]
+
+
+    B1 --> B1a[销售商品]
+    B1 --> B1b[租赁商品]
+
+    B2 --> B2a[购物车]
+    B2 --> B2b[订单结算]
+    B2 --> B2c[订单管理]
+
+
+    C --> C1[个人资料]
+    C --> C2[地址管理]
+    C --> C3[密码修改]
+
+    D --> D1[创建订单]
+    D --> D2[取消订单]
+    D --> D3[申请退款]
+    D --> D4[确认收货]
+    D --> D5[归还商品]
+```
+
+### 后台项目功能结构
+
+```mermaid
+graph TD
+    A[后台管理系统] --> B[管理端]
+    A --> C[商家端]
+
+
+    B --> B1[人员登录]
+    B --> B2[用户管理]
+    B --> B3[角色管理]
+    B --> B4[商家管理]
+
+
+    C --> C1[商品管理]
+    C --> C2[订单管理]
+    C --> C3[库存管理]
+
+    C2 --> C2a[订单列表]
+    C2 --> C2b[订单发货]
+    C2 --> C2c[审核退款]
+    C2 --> C2d[归还确认]
+
+
+
+
+
+
+```
+
+你可以将以上Mermaid代码复制到支持Mermaid渲染的工具中使用，如Typora、Obsidian、GitLab等，或者在线的Mermaid编辑器中进行可视化。
+
+
+
+## 系统功能结构 Mermaid 图表
+
+### 1. 整体系统架构
+
+```mermaid
+graph TB
+    subgraph "前端层"
+        VueApp["Vue3 应用<br/>Element Plus + Vite"]
+        Portal["Portal视图<br/>(客户界面)"]
+        Admin["Admin视图<br/>(管理界面)"]
+    end
+
+    subgraph "API网关层"
+        Gateway["API Gateway<br/>JWT认证"]
+        Swagger["Swagger文档"]
+    end
+
+    subgraph "后端模块层"
+        AdminModule["zNova-admin<br/>应用入口"]
+        Framework["zNova-framework<br/>核心框架"]
+        System["zNova-system<br/>系统管理"]
+        Merchant["zNova-merchant<br/>业务逻辑"]
+        Quartz["zNova-quartz<br/>定时任务"]
+        Generator["zNova-generator<br/>代码生成"]
+        Common["zNova-common<br/>通用工具"]
+    end
+
+    subgraph "数据层"
+        Database["MySQL数据库"]
+        Redis["Redis缓存"]
+    end
+
+    VueApp --> Portal
+    VueApp --> Admin
+    Portal --> Gateway
+    Admin --> Gateway
+    Gateway --> Swagger
+    Gateway --> AdminModule
+
+    AdminModule --> Framework
+    AdminModule --> System
+    AdminModule --> Merchant
+    AdminModule --> Quartz
+    AdminModule --> Generator
+
+    System --> Framework
+    Merchant --> Framework
+    Quartz --> Framework
+    Generator --> Framework
+
+    Framework --> Common
+    System --> Common
+    Merchant --> Common
+
+    Framework --> Database
+    Framework --> Redis
+```
+
+### 2. 前台功能结构（C端）
+
+```mermaid
+graph TD
+    subgraph "前台功能模块"
+        UserCenter["用户中心模块"]
+        ProductDisplay["商品展示模块"]
+        TradeFlow["交易流程模块"]
+        OrderOps["订单操作功能"]
+    end
+
+    subgraph "用户中心"
+        Login["登录注册<br/>/portal/login<br/>/portal/register"]
+        Profile["个人资料<br/>/portal/user/profile"]
+        Address["地址管理"]
+        Password["密码修改"]
+    end
+
+    subgraph "商品展示"
+        Home["首页<br/>/computer-market"]
+        Rental["租赁专区<br/>/computer-market/rental"]
+        Sale["出售专区<br/>/computer-market/sale"]
+        Build["装机配置<br/>/computer-market/Build"]
+        Detail["商品详情"]
+    end
+
+    subgraph "交易流程"
+        Cart["购物车"]
+        Checkout["订单结算<br/>/portal/trade/checkout"]
+        Payment["订单支付<br/>/portal/trade/pay"]
+        OrderMgmt["订单管理<br/>/portal/user/order"]
+    end
+
+    subgraph "订单操作"
+        Create["创建订单"]
+        Cancel["取消订单"]
+        Refund["申请退款"]
+        Confirm["确认收货"]
+        Return["归还商品"]
+    end
+
+    UserCenter --> Login
+    UserCenter --> Profile
+    UserCenter --> Address
+    UserCenter --> Password
+
+    ProductDisplay --> Home
+    ProductDisplay --> Rental
+    ProductDisplay --> Sale
+    ProductDisplay --> Build
+    ProductDisplay --> Detail
+
+    TradeFlow --> Cart
+    TradeFlow --> Checkout
+    TradeFlow --> Payment
+    TradeFlow --> OrderMgmt
+
+    OrderOps --> Create
+    OrderOps --> Cancel
+    OrderOps --> Refund
+    OrderOps --> Confirm
+    OrderOps --> Return
+```
+
+### 3. 后台功能结构（B端）
+
+```mermaid
+graph TD
+    subgraph "后台功能模块"
+        SystemMgmt["系统管理模块"]
+        MerchantMgmt["商户管理模块"]
+        BaseData["基础数据模块"]
+        Monitor["监控运维模块"]
+    end
+
+    subgraph "系统管理"
+        UserMgmt["用户管理"]
+        DeptMgmt["部门管理"]
+        PostMgmt["岗位管理"]
+        MenuMgmt["菜单管理"]
+        RoleMgmt["角色管理"]
+    end
+
+    subgraph "商户管理"
+        ProductMgmt["商品管理"]
+        StockMgmt["库存管理"]
+        OrderMgmt["订单管理"]
+        OrderList["订单列表"]
+        Ship["订单发货"]
+        RefundAudit["退款审核"]
+        ReturnConfirm["归还确认"]
+    end
+
+    subgraph "基础数据"
+        DictMgmt["字典管理"]
+        ParamMgmt["参数管理"]
+        NoticeMgmt["通知公告"]
+    end
+
+    subgraph "监控运维"
+        OperLog["操作日志"]
+        LoginLog["登录日志"]
+        OnlineUser["在线用户"]
+        Schedule["定时任务"]
+        ServiceMonitor["服务监控"]
+        CacheMonitor["缓存监控"]
+    end
+
+    SystemMgmt --> UserMgmt
+    SystemMgmt --> DeptMgmt
+    SystemMgmt --> PostMgmt
+    SystemMgmt --> MenuMgmt
+    SystemMgmt --> RoleMgmt
+
+    MerchantMgmt --> ProductMgmt
+    MerchantMgmt --> StockMgmt
+    MerchantMgmt --> OrderMgmt
+    OrderMgmt --> OrderList
+    OrderMgmt --> Ship
+    OrderMgmt --> RefundAudit
+    OrderMgmt --> ReturnConfirm
+
+    BaseData --> DictMgmt
+    BaseData --> ParamMgmt
+    BaseData --> NoticeMgmt
+
+    Monitor --> OperLog
+    Monitor --> LoginLog
+    Monitor --> OnlineUser
+    Monitor --> Schedule
+    Monitor --> ServiceMonitor
+    Monitor --> CacheMonitor
+```
+
+### 4. 核心业务特性
+
+```mermaid
+graph LR
+    subgraph "核心特性"
+        MultiMerchant["多商户支持"]
+        DualMode["双业务模式"]
+        StockMgmt["库存管理"]
+        Permission["权限控制"]
+    end
+
+    subgraph "多商户"
+        DataIsolation["基于部门ID的数据隔离"]
+        OrderSplit["订单自动按商户拆分"]
+    end
+
+    subgraph "业务模式"
+        RentalMode["租赁模式<br/>按天计费"]
+        SaleMode["销售模式<br/>一次性购买"]
+    end
+
+    subgraph "库存特性"
+        AtomicOps["原子性库存操作"]
+        AutoRestore["自动恢复库存"]
+    end
+
+    subgraph "权限体系"
+        JWTAuth["JWT认证"]
+        DynamicMenu["动态权限菜单"]
+        DataScope["数据范围权限"]
+    end
+
+    MultiMerchant --> DataIsolation
+    MultiMerchant --> OrderSplit
+
+    DualMode --> RentalMode
+    DualMode --> SaleMode
+
+    StockMgmt --> AtomicOps
+    StockMgmt --> AutoRestore
+
+    Permission --> JWTAuth
+    Permission --> DynamicMenu
+    Permission --> DataScope
+```
+
+## Notes
+
+这些Mermaid图表展示了zNova电脑租售平台的完整功能结构 [1](#1-0) [2](#1-1) 。系统采用前后端分离架构，前端基于Vue3 + Element Plus [2](#1-1) ，后端基于Spring Boot + Spring Security [1](#1-0) ，包含7个Maven模块 [3](#1-2) 。前台提供完整的购物体验，后台包含18个内置功能模块 [4](#1-3) ，支持多商户运营和租赁销售双业务模式。
+
+Wiki pages you might want to explore:
+- [Overview (qzwang07-debug/shi)](/wiki/qzwang07-debug/shi#1)
+
+### Citations
+
+**File:** README.md (L16-19)
+```markdown
+* 前端采用Vue、Element UI。
+* 后端采用Spring Boot、Spring Security、Redis & Jwt。
+* 权限认证使用Jwt，支持多终端认证系统。
+* 支持加载动态权限菜单，多方式轻松权限控制。
+```
+
+**File:** README.md (L28-45)
+```markdown
+1.  用户管理：用户是系统操作者，该功能主要完成系统用户配置。
+2.  部门管理：配置系统组织机构（公司、部门、小组），树结构展现支持数据权限。
+3.  岗位管理：配置系统用户所属担任职务。
+4.  菜单管理：配置系统菜单，操作权限，按钮权限标识等。
+5.  角色管理：角色菜单权限分配、设置角色按机构进行数据范围权限划分。
+6.  字典管理：对系统中经常使用的一些较为固定的数据进行维护。
+7.  参数管理：对系统动态配置常用参数。
+8.  通知公告：系统通知公告信息发布维护。
+9.  操作日志：系统正常操作日志记录和查询；系统异常信息日志记录和查询。
+10. 登录日志：系统登录日志记录查询包含登录异常。
+11. 在线用户：当前系统中活跃用户状态监控。
+12. 定时任务：在线（添加、修改、删除)任务调度包含执行结果日志。
+13. 代码生成：前后端代码的生成（java、html、xml、sql）支持CRUD下载 。
+14. 系统接口：根据业务代码自动生成相关的api接口文档。
+15. 服务监控：监视当前系统CPU、内存、磁盘、堆栈等相关信息。
+16. 缓存监控：对系统的缓存信息查询，命令统计等。
+17. 在线构建器：拖动表单元素生成相应的HTML代码。
+18. 连接池监视：监视当前系统数据库连接池状态，可进行分析SQL找出系统性能瓶颈。
+```
+
+**File:** zNova-ui/README.md (L14-16)
+```markdown
+* 本仓库为前端技术栈 [Vue3](https://v3.cn.vuejs.org) + [Element Plus](https://element-plus.org/zh-CN) + [Vite](https://cn.vitejs.dev) 版本。
+* 配套后端代码仓库地址[RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) 或 [RuoYi-Vue-fast](https://github.com/yangzongzhuan/RuoYi-Vue-fast) 版本。
+* 前端技术栈（[Vue2](https://cn.vuejs.org) + [Element](https://github.com/ElemeFE/element) + [Vue CLI](https://cli.vuejs.org/zh)），请移步[RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue/tree/master/ruoyi-ui)。
+```
+
+**File:** pom.xml (L229-237)
+```text
+    <modules>
+        <module>zNova-admin</module>
+        <module>zNova-framework</module>
+        <module>zNova-system</module>
+        <module>zNova-quartz</module>
+        <module>zNova-generator</module>
+        <module>zNova-common</module>
+        <module>zNova-merchant</module>
+    </modules>
+```
+

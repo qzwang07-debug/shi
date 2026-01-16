@@ -458,12 +458,17 @@ const submitOrder = async () => {
   try {
     const res = await createOrder(payload);
     ElMessage.success("订单提交成功！");
-    const orderNo = res.data?.[0] || res.data?.orderNo || res.orderNo;
+    
+    // 获取所有订单号
+    const orderNos = Array.isArray(res.data) ? res.data : [res.data?.orderNo || res.orderNo];
     const totalAmount = finalTotalPrice.value;
+    
+    // 将订单号数组转换为逗号分隔的字符串
+    const orderNosStr = orderNos.join(',');
     
     router.push({
       path: '/portal/trade/pay',
-      query: { orderNo: orderNo, amount: totalAmount }
+      query: { orderNos: orderNosStr, amount: totalAmount }
     });
   } catch (error) {
     console.error(error);

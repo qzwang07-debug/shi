@@ -12,7 +12,7 @@
         <div class="order-info">
           <div class="info-item">
             <span class="label">订单编号：</span>
-            <span class="value">{{ orderNo }}</span>
+            <span class="value">{{ orderNos.join(', ') }}</span>
           </div>
           <div class="info-item">
             <span class="label">支付金额：</span>
@@ -82,7 +82,7 @@ const route = useRoute();
 const router = useRouter();
 
 // 响应式数据
-const orderNo = route.query.orderNo;
+const orderNos = route.query.orderNos ? route.query.orderNos.split(',') : [route.query.orderNo];
 const amount = route.query.amount;
 const loading = ref(false);
 const payType = ref('wechat'); // 默认微信
@@ -102,28 +102,38 @@ function handleSimulatePay() {
   
   // 模拟网络延迟 1秒，增加真实感
   setTimeout(() => {
-    request({
-      url: `/app/order/pay/${route.query.orderNo}`,
-      method: 'put',
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    }).then(res => {
-      loading.value = false;
-      ElMessage.success('恭喜您，支付成功！');
-      
-      // 跳转回我的订单页
-      router.push({
-        path: '/portal/user/order',
-        query: { tab: '1' }
+    // 为每个订单创建支付请求
+    const payPromises = orderNos.map(orderNo => {
+      return request({
+        url: `/app/order/pay/${orderNo}`,
+        method: 'put',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
       });
-    }).catch((error) => {
-      loading.value = false;
-      if (error && error.toString().includes('认证失败')) {
-        ElMessage.error("登录状态已过期，请重新登录");
-        router.push('/portal/login?redirect=' + encodeURIComponent(route.fullPath));
-      }
     });
+
+    // 使用Promise.all等待所有支付请求完成
+    Promise.all(payPromises)
+      .then(() => {
+        loading.value = false;
+        ElMessage.success('恭喜您，所有订单支付成功！');
+        
+        // 跳转回我的订单页
+        router.push({
+          path: '/portal/user/order',
+          query: { tab: '1' }
+        });
+      })
+      .catch((error) => {
+        loading.value = false;
+        if (error && error.toString().includes('认证失败')) {
+          ElMessage.error("登录状态已过期，请重新登录");
+          router.push('/portal/login?redirect=' + encodeURIComponent(route.fullPath));
+        } else {
+          ElMessage.error("部分订单支付失败，请检查订单状态");
+        }
+      });
   }, 1000);
 }
 
