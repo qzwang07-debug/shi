@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -29,10 +29,16 @@
             </exclusions>
         </dependency>
 
-        <!-- 通用工具-->
+        <!-- 通用工具 -->
         <dependency>
             <groupId>com.zNova</groupId>
             <artifactId>zNova-common</artifactId>
+        </dependency>
+
+        <!-- 业务模块：提供库存预警等服务接口/实现 -->
+        <dependency>
+            <groupId>com.zNova</groupId>
+            <artifactId>zNova-merchant</artifactId>
         </dependency>
 
     </dependencies>

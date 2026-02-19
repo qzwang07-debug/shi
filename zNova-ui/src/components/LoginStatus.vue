@@ -37,9 +37,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getAppUserInfo } from '@/api/appLogin'
+import useAppUserStore from '@/store/modules/appUser'
 
 const router = useRouter()
+const appUserStore = useAppUserStore()
 
 // 定义props
 const props = defineProps({
@@ -53,41 +54,24 @@ const props = defineProps({
 // 定义事件
 const emit = defineEmits(['login', 'logout', 'profile'])
 
-// 本地用户信息
-const localUserInfo = ref(null)
 // 默认头像
 const defaultAvatar = '/img/profile.jpg'
 
 // 计算登录状态
-const isLoggedIn = computed(() => {
-  return !!(localStorage.getItem('app_token') || props.userInfo || localUserInfo.value)
-})
+const isLoggedIn = computed(() => appUserStore.isLoggedIn)
 
 // 计算最终用户信息
 const finalUserInfo = computed(() => {
-  return props.userInfo || localUserInfo.value
+  return props.userInfo || appUserStore.userInfo
 })
 
 // 计算用户头像
-const userAvatar = computed(() => {
-  if (finalUserInfo.value && finalUserInfo.value.avatar) {
-    return finalUserInfo.value.avatar
-  }
-  return defaultAvatar
-})
+const userAvatar = computed(() => appUserStore.userAvatar)
 
 // 获取用户信息
 const fetchUserInfo = async () => {
-  try {
-    const token = localStorage.getItem('app_token')
-    if (token) {
-      const res = await getAppUserInfo()
-      localUserInfo.value = res.user
-    }
-  } catch (err) {
-    console.error('获取用户信息失败:', err)
-    localStorage.removeItem('app_token')
-    localUserInfo.value = null
+  if (appUserStore.isLoggedIn && !appUserStore.userInfo) {
+    await appUserStore.fetchUserInfo()
   }
 }
 
@@ -113,7 +97,7 @@ watch(
   () => props.userInfo,
   (newVal) => {
     if (newVal) {
-      localUserInfo.value = newVal
+      appUserStore.updateLocalUserInfo(newVal)
     }
   }
 )

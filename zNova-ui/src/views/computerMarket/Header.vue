@@ -72,51 +72,26 @@ import { useRouter, useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Monitor, CaretBottom, List, SwitchButton, Location, User } from '@element-plus/icons-vue';
 import { getAppToken, removeAppToken } from '@/utils/auth';
-import { getAppUserInfo } from '@/api/appLogin'; // 导入获取用户信息的API
-import { formatAvatarUrl } from '@/utils/avatarUtils'; // 导入头像处理工具
+import useAppUserStore from '@/store/modules/appUser';
 
 const router = useRouter();
 const route = useRoute();
+const appUserStore = useAppUserStore();
 
 // 获取当前路由路径，用于高亮导航
 const currentPath = computed(() => route.path);
 
 // 用户状态
-const isLogin = ref(false);
-const userInfo = ref({});
+const isLogin = computed(() => appUserStore.isLoggedIn);
+const userInfo = computed(() => appUserStore.userInfo || {});
 
-// 计算头像 URL（处理相对路径/OSS路径）
-const userAvatarUrl = computed(() => {
-  if (userInfo.value && userInfo.value.avatar) {
-    return formatAvatarUrl(userInfo.value.avatar);
-  }
-  return ''; // 返回空字符串让 el-avatar 显示文字 fallback
-});
+// 计算头像 URL
+const userAvatarUrl = computed(() => appUserStore.userAvatar);
 
 // 检查登录状态并获取最新用户信息
 const checkLogin = async () => {
-  const token = getAppToken();
-  if (token) {
-    isLogin.value = true;
-    try {
-      // 调用接口获取最新用户信息（确保头像是最新的）
-      const res = await getAppUserInfo();
-      if (res && res.user) {
-        userInfo.value = res.user;
-        // 可选：更新本地缓存
-        localStorage.setItem('user_info', JSON.stringify(res.user));
-      }
-    } catch (error) {
-      console.error("获取用户信息失败", error);
-      // 如果接口调用失败，尝试从本地缓存读取兜底
-      const storedUser = localStorage.getItem('user_info');
-      if (storedUser) {
-        userInfo.value = JSON.parse(storedUser);
-      }
-    }
-  } else {
-    isLogin.value = false;
-    userInfo.value = {};
+  if (appUserStore.isLoggedIn && !appUserStore.userInfo) {
+    await appUserStore.fetchUserInfo();
   }
 };
 
@@ -154,10 +129,7 @@ const handleLogout = () => {
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    removeAppToken(); // 清除 Token
-    localStorage.removeItem('user_info'); // 清除用户信息
-    isLogin.value = false;
-    userInfo.value = {};
+    appUserStore.clearUserInfo();
     ElMessage.success('已退出登录');
     router.push('/portal/login');
   }).catch(() => {});

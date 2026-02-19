@@ -21,9 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.zNova.common.config.RuoYiConfig;
 import com.zNova.common.core.domain.AjaxResult;
 import com.zNova.common.utils.StringUtils;
-import com.zNova.common.utils.file.FileUploadUtils;
 import com.zNova.common.utils.file.FileUtils;
-import com.zNova.framework.config.ServerConfig;
 
 /**
  * 通用请求处理
@@ -35,9 +33,6 @@ import com.zNova.framework.config.ServerConfig;
 public class CommonController
 {
     private static final Logger log = LoggerFactory.getLogger(CommonController.class);
-
-    @Autowired
-    private ServerConfig serverConfig;
 
     private static final String FILE_DELIMETER = ",";
 
@@ -114,20 +109,21 @@ public class CommonController
     {
         try
         {
-            // 上传文件路径
-            String filePath = RuoYiConfig.getUploadPath();
             List<String> urls = new ArrayList<String>();
             List<String> fileNames = new ArrayList<String>();
             List<String> newFileNames = new ArrayList<String>();
             List<String> originalFilenames = new ArrayList<String>();
+            String objectName = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/";
+            
             for (MultipartFile file : files)
             {
-                // 上传并返回新文件名称
-                String fileName = FileUploadUtils.upload(filePath, file);
-                String url = serverConfig.getUrl() + fileName;
+                FileInfo fileInfo = fileStorageService.of(file)
+                        .setPath(objectName)
+                        .upload();
+                String url = fileInfo.getUrl();
                 urls.add(url);
-                fileNames.add(fileName);
-                newFileNames.add(FileUtils.getName(fileName));
+                fileNames.add(url);
+                newFileNames.add(FileUtils.getName(url));
                 originalFilenames.add(file.getOriginalFilename());
             }
             AjaxResult ajax = AjaxResult.success();

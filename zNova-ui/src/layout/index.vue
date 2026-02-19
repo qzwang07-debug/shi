@@ -21,8 +21,12 @@ import defaultSettings from '@/settings'
 
 import useAppStore from '@/store/modules/app'
 import useSettingsStore from '@/store/modules/settings'
+import useUserStore from '@/store/modules/user'
+import { getStockWarningProducts } from '@/api/merchant/stock'
+import { ElNotification } from 'element-plus'
 
 const settingsStore = useSettingsStore()
+const userStore = useUserStore()
 const theme = computed(() => settingsStore.theme);
 const sideTheme = computed(() => settingsStore.sideTheme);
 const sidebar = computed(() => useAppStore().sidebar);
@@ -59,6 +63,67 @@ function handleClickOutside() {
 const settingRef = ref(null);
 function setLayout() {
   settingRef.value.openSetting();
+}
+
+onMounted(() => {
+  // 延时执行以确保数据加载
+  setTimeout(() => {
+    checkStockWarning()
+  }, 500)
+})
+
+function checkStockWarning() {
+  const isMerchant = userStore.roles && !userStore.roles.includes('admin') && userStore.deptId
+  
+  if (isMerchant) {
+    getStockWarningProducts().then(res => {
+      const products = res.data || res.rows || []
+      
+      if (products.length > 0) {
+        // 构建表格样式的HTML字符串
+        const tableRows = products.map(item => 
+          `<tr style="border-bottom: 1px solid #EBEEF5;">
+             <td style="padding: 8px 0; color: #606266; font-size: 13px; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.productName}">${item.productName}</td>
+             <td style="padding: 8px 0 8px 15px; text-align: right; color: #F56C6C; font-weight: bold; font-size: 13px;">${item.stockQuantity}</td>
+           </tr>`
+        ).join('')
+
+        const contentHtml = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <p style="margin: 0 0 12px 0; color: #303133; font-size: 14px; line-height: 1.5;">当前店铺有 <b style="color: #E6A23C; font-size: 16px;">${products.length}</b> 款商品库存不足：</p>
+            <div style="max-height: 250px; overflow-y: auto; margin-bottom: 8px; scrollbar-width: thin;">
+              <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                <thead>
+                  <tr style="background-color: #F5F7FA; color: #909399; font-size: 12px;">
+                    <th style="padding: 4px; text-align: left; font-weight: normal;">商品名称</th>
+                    <th style="padding: 4px; text-align: right; font-weight: normal; width: 60px;">剩余</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows}
+                </tbody>
+              </table>
+            </div>
+            <div style="padding-top: 8px; border-top: 1px dashed #DCDFE6; text-align: right;">
+              <span style="color: #909399; font-size: 12px;">请前往商品管理页面补货</span>
+            </div>
+          </div>
+        `
+
+        ElNotification({
+          title: '库存预警提醒',
+          message: contentHtml,
+          type: 'warning',
+          dangerouslyUseHTMLString: true,
+          duration: 0, // 不自动关闭
+          position: 'bottom-right',
+          offset: 40,
+        })
+      }
+    }).catch(e => {
+      console.error('库存预警检查失败', e)
+    })
+  }
 }
 </script>
 

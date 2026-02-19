@@ -36,3 +36,12 @@ export function applyRefund(data) {
     data: data
   })
 }
+
+// 获取即将到期的租借订单
+export function getExpiringOrders() {
+  return request({
+    url: '/app/order/expiring-soon',
+    method: 'get'
+  })
+}
+

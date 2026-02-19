@@ -18,6 +18,7 @@ import com.zNova.framework.manager.AsyncManager;
 import com.zNova.framework.manager.factory.AsyncFactory;
 import com.zNova.system.service.IAppUserService;
 import com.zNova.system.service.ISysConfigService;
+import java.math.BigDecimal;
 
 /**
 
@@ -88,6 +89,10 @@ public class AppRegisterService
             appUser.setStatus("0");
             appUser.setDelFlag("0");
             appUser.setCreateTime(DateUtils.getNowDate());
+            // 初始化信用分为500
+            appUser.setCreditScore(500);
+            // 初始化余额为0
+            appUser.setBalance(BigDecimal.ZERO);
 
             // 插入用户
             int rows = appUserService.insertAppUser(appUser);

@@ -10,10 +10,15 @@
         <result property="password"    column="password"    />
         <result property="nickname"    column="nickname"    />
         <result property="avatar"    column="avatar"    />
+        <result property="sex"    column="sex"    />
+        <result property="phonenumber"    column="phonenumber"    />
         <result property="status"    column="status"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="loginIp"    column="login_ip"    />
         <result property="loginDate"    column="login_date"    />
+        <result property="creditScore"    column="credit_score"    />
+        <result property="balance"    column="balance"    />
+        <result property="frozenDeposit"    column="frozen_deposit"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"    column="update_by"    />
@@ -22,7 +27,7 @@
     </resultMap>
 
     <sql id="selectAppUserVo">
-        select user_id, username, password, nickname, avatar, status, del_flag, login_ip, login_date, create_by, create_time, update_by, update_time, remark from app_user
+        select user_id, username, password, nickname, avatar, sex, phonenumber, status, del_flag, login_ip, login_date, credit_score, balance, frozen_deposit, create_by, create_time, update_by, update_time, remark from app_user
     </sql>
 
     <select id="selectAppUserList" parameterType="com.zNova.common.core.domain.entity.AppUser" resultMap="AppUserResult">
@@ -61,10 +66,15 @@
             <if test="password != null and password != ''">password,</if>
             <if test="nickname != null">nickname,</if>
             <if test="avatar != null">avatar,</if>
+            <if test="sex != null">sex,</if>
+            <if test="phonenumber != null">phonenumber,</if>
             <if test="status != null">status,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="loginIp != null">login_ip,</if>
             <if test="loginDate != null">login_date,</if>
+            <if test="creditScore != null">credit_score,</if>
+            <if test="balance != null">balance,</if>
+            <if test="frozenDeposit != null">frozen_deposit,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -76,10 +86,15 @@
             <if test="password != null and password != ''">#{password},</if>
             <if test="nickname != null">#{nickname},</if>
             <if test="avatar != null">#{avatar},</if>
+            <if test="sex != null">#{sex},</if>
+            <if test="phonenumber != null">#{phonenumber},</if>
             <if test="status != null">#{status},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="loginIp != null">#{loginIp},</if>
             <if test="loginDate != null">#{loginDate},</if>
+            <if test="creditScore != null">#{creditScore},</if>
+            <if test="balance != null">#{balance},</if>
+            <if test="frozenDeposit != null">#{frozenDeposit},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -95,10 +110,15 @@
             <if test="password != null and password != ''">password = #{password},</if>
             <if test="nickname != null">nickname = #{nickname},</if>
             <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="phonenumber != null">phonenumber = #{phonenumber},</if>
             <if test="status != null">status = #{status},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="loginIp != null">login_ip = #{loginIp},</if>
             <if test="loginDate != null">login_date = #{loginDate},</if>
+            <if test="creditScore != null">credit_score = #{creditScore},</if>
+            <if test="balance != null">balance = #{balance},</if>
+            <if test="frozenDeposit != null">frozen_deposit = #{frozenDeposit},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
@@ -118,4 +138,33 @@
             #{userId}
         </foreach>
     </delete>
+
+    <!-- 信用分增量更新（避免读-改-写并发问题） -->
+    <update id="updateCreditScoreDelta">
+        update app_user 
+        set credit_score = GREATEST(0, IFNULL(credit_score, 500) + #{delta})
+        where user_id = #{userId}
+    </update>
+
+    <!-- 冻结押金：增加用户的冻结押金金额 -->
+    <update id="freezeDeposit">
+        update app_user 
+        set frozen_deposit = IFNULL(frozen_deposit, 0) + #{amount}
+        where user_id = #{userId}
+    </update>
+
+    <!-- 解冻押金：减少冻结押金，增加可用余额（用于归还确认后返还押金） -->
+    <update id="unfreezeDeposit">
+        update app_user 
+        set frozen_deposit = GREATEST(0, IFNULL(frozen_deposit, 0) - #{amount}),
+            balance = IFNULL(balance, 0) + #{refundAmount}
+        where user_id = #{userId}
+    </update>
+
+    <!-- 扣除冻结押金（逾期扣款时使用，不返还到余额） -->
+    <update id="deductFrozenDeposit">
+        update app_user 
+        set frozen_deposit = GREATEST(0, IFNULL(frozen_deposit, 0) - #{amount})
+        where user_id = #{userId}
+    </update>
 </mapper>

@@ -268,6 +268,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { listFrontProduct } from "@/api/front/product";
+import { getPersonalRecommend } from "@/api/front/recommend";
 import { listFrontCpu, listFrontGpu } from "@/api/front/hardware";
 import {
   Box, ShoppingCart, View, Search, Cpu, Monitor,
@@ -345,7 +346,34 @@ const formatMemoryStorage = (product) => {
   return `${memoryText} ${storageText}`;
 };
 
+const shuffleInPlace = (list) => {
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const temp = list[i]
+    list[i] = list[j]
+    list[j] = temp
+  }
+  return list
+}
 
+const recommendFirst = (allProducts, recommendedIds = []) => {
+  const recommendedIdSet = new Set(recommendedIds)
+  const productById = new Map(allProducts.map(p => [p.id, p]))
+
+  const recommended = []
+  const added = new Set()
+  for (const id of recommendedIds) {
+    if (added.has(id)) continue
+    const product = productById.get(id)
+    if (!product) continue
+    recommended.push(product)
+    added.add(id)
+  }
+
+  const others = allProducts.filter(p => !recommendedIdSet.has(p.id))
+  shuffleInPlace(others)
+  return [...recommended, ...others]
+}
 const getProductData = async () => {
   try {
     loading.value = true;
@@ -357,7 +385,15 @@ const getProductData = async () => {
     
     if (response.rows && response.rows.length > 0) {
       const validProducts = response.rows.filter(product => product.id >= 4);
-      products.value = validProducts;
+      let recommendedIds = [];
+      try {
+        const recommendRes = await getPersonalRecommend(50);
+        recommendedIds = (recommendRes.data || []).map(p => p.id).filter(Boolean);
+      } catch (e) {
+        console.warn('获取推荐商品失败，将随机展示', e);
+      }
+
+      products.value = recommendFirst(validProducts, recommendedIds);
       filterAndSortProducts();
     } else {
       products.value = [];
@@ -436,7 +472,7 @@ const filterAndSortProducts = () => {
     case 'price-low': result.sort((a, b) => (a.rentPrice || 0) - (b.rentPrice || 0)); break;
     case 'price-high': result.sort((a, b) => (b.rentPrice || 0) - (a.rentPrice || 0)); break;
     case 'performance': result.sort((a, b) => (b.performanceScore || 0) - (a.performanceScore || 0)); break;
-    default: result.sort((a, b) => a.id - b.id);
+    default: break;
   }
   
   filteredProducts.value = result;

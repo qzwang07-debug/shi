@@ -146,6 +146,22 @@
                     </template>
                   </el-table-column>
 
+                  <el-table-column label="押金" width="160" align="center">
+                    <template #default="scope">
+                      <div v-if="scope.row.businessType === '1'">
+                        <div v-if="depositMultiplier === 0">
+                          <el-tag type="success" effect="plain" round size="small">免押金</el-tag>
+                        </div>
+                        <div v-else class="deposit-cell">
+                          <span class="currency">¥</span>
+                          <span class="num">{{ calculateDeposit(scope.row).toFixed(2) }}</span>
+                          <div class="deposit-tip">{{ depositMultiplier }}倍日租金</div>
+                        </div>
+                      </div>
+                      <span v-else class="text-gray-light">--</span>
+                    </template>
+                  </el-table-column>
+
                   <el-table-column label="小计" width="160" align="center">
                     <template #default="scope">
                       <span class="subtotal-price">¥{{ calculateSubtotal(scope.row) }}</span>
@@ -174,6 +190,14 @@
         <div class="checkout-footer-bar">
           <div class="bar-content">
             <div class="price-info">
+              <div class="deposit-info-bar" v-if="hasRentalItems">
+                <span class="label">押金:</span>
+                <span v-if="depositMultiplier === 0" class="free-text">
+                  免押金 <span class="credit-tip">(信用分≥600)</span>
+                </span>
+                <span v-else class="deposit-amount">¥{{ totalDeposit.toFixed(2) }}</span>
+                <el-divider direction="vertical" class="footer-divider" />
+              </div>
               <span class="label">应付总额:</span>
               <div class="total-price-wrapper">
                 <span class="currency">¥</span>
@@ -254,11 +278,14 @@ import {
 import { listCart } from "@/api/shop/cart";
 import { listAddress } from "@/api/portal/address";
 import { createOrder } from "@/api/portal/order";
+import { getAppUserInfo } from "@/api/appLogin";
 import { getAppToken } from '@/utils/auth';
 import Header from '@/views/computerMarket/Header.vue';
+import useAppUserStore from '@/store/modules/appUser';
 
 const route = useRoute();
 const router = useRouter();
+const appUserStore = useAppUserStore();
 
 // 数据状态
 const checkoutList = ref([]);
@@ -268,6 +295,28 @@ const selectedAddressId = ref(null);
 const orderRemark = ref('');
 const addressVisible = ref(false);
 const submitting = ref(false);
+
+// 押金相关逻辑
+const userCreditScore = ref(null); // 改为 null，表示尚未加载
+
+const depositMultiplier = computed(() => {
+  const score = userCreditScore.value;
+  if (score === null) return 0; // 尚未加载时不显示/计算，或者给个中间值
+  if (score >= 600) return 0;
+  if (score >= 400) return 6;
+  return 10;
+});
+
+const hasRentalItems = computed(() => checkoutList.value.some(item => item.businessType === '1'));
+
+const calculateDeposit = (item) => {
+  if (item.businessType !== '1') return 0;
+  return item.price * depositMultiplier.value * item.quantity;
+};
+
+const totalDeposit = computed(() => {
+  return checkoutList.value.reduce((sum, item) => sum + calculateDeposit(item), 0);
+});
 
 // 计算属性
 const totalCount = computed(() => checkoutList.value.length);
@@ -300,7 +349,9 @@ const handleDateChange = (val, row) => {
 const calculateSubtotal = (item) => {
   if (item.businessType === '1') {
     const days = item.rentDays || 0;
-    return item.price * item.quantity * days;
+    const rent = item.price * item.quantity * days;
+    const deposit = calculateDeposit(item);
+    return rent + deposit;
   } else {
     return item.price * item.quantity;
   }
@@ -320,6 +371,12 @@ const init = async () => {
     router.push('/portal/login?redirect=' + encodeURIComponent(route.fullPath));
     return;
   }
+
+  // 获取用户信用分（优先从 Store 获取，Store 为空则拉取）
+  if (!appUserStore.userInfo) {
+    await appUserStore.fetchUserInfo();
+  }
+  userCreditScore.value = appUserStore.userInfo?.creditScore ?? 500;
 
   const directBuy = route.query.directBuy === 'true';
   const productStr = route.query.product;
@@ -423,6 +480,11 @@ const confirmAddressSelection = () => {
 
 // 提交订单
 const submitOrder = async () => {
+  if (userCreditScore.value === null) {
+    ElMessage.warning("正在加载信用分信息，请稍候...");
+    return;
+  }
+  
   if (!currentAddress.value) {
     ElMessage.warning("请先选择收货地址");
     return;
@@ -850,5 +912,52 @@ onMounted(() => {
 .add-new-addr:hover {
   border-color: #626aef;
   color: #626aef;
+}
+
+/* 押金相关样式 */
+.deposit-cell {
+  color: #e6a23c;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+.deposit-tip {
+  font-size: 12px;
+  color: #909399;
+  font-weight: normal;
+  transform: scale(0.9);
+}
+
+.deposit-info-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.deposit-info-bar .label {
+  font-size: 14px;
+  color: #606266;
+}
+.deposit-amount {
+  color: #e6a23c;
+  font-size: 20px;
+  font-weight: bold;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.free-text {
+  color: #67c23a;
+  font-weight: bold;
+  font-size: 16px;
+}
+.credit-tip {
+  font-size: 12px;
+  font-weight: normal;
+  color: #909399;
+}
+.footer-divider {
+  margin: 0 15px;
+  height: 1.2em;
+  border-color: #dcdfe6;
 }
 </style>

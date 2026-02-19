@@ -2,7 +2,7 @@
 
 > 目标：让「只能读取 README」的读者/AI 也能理解项目是什么、怎么跑起来、有哪些模块/页面/接口、业务流程如何串起来、数据结构大概是什么样子。
 
-本仓库是一个 **前后端一体** 的毕业设计/课程设计型项目：在 RuoYi-Vue3 的后台管理能力基础上，扩展出 **C 端电脑租赁/购买商城** 与 **DIY 装机性能评估**，并补齐了 **订单/购物车/地址/评价/商家订单履约** 等电商闭环能力。
+本仓库是一个 **前后端一体** 的毕业设计/课程设计型项目：在 RuoYi-Vue3 的后台管理能力基础上，扩展出 **C 端电脑租赁/购买商城** 与 **DIY 装机性能评估**，并补齐了 **订单/购物车/地址/评价/商家订单履约** 等电商闭环能力；同时新增 **协同过滤推荐**、**信用分/押金风控**、**Quartz 定时任务（逾期检查/库存预警/归还提醒）**、**AI 配置单点评** 等能力。
 
 ---
 
@@ -35,19 +35,25 @@
 
 - C 端（用户侧）
   - 浏览电脑商品：租赁/出售两类，支持筛选、排序、查看详情
+  - 个性化推荐：基于协同过滤（浏览/下单行为）推荐商品（未登录用户回退热门）
   - 购物车：加入/修改数量/勾选/删除
   - 下单与结算：选择地址、租赁日期、备注、提交订单
   - 支付（演示）：模拟支付成功，推动订单状态流转
   - 订单中心：查看订单、取消订单、申请退款、确认收货/归还
+  - 信用分：影响租赁押金档位（免押/6 倍/10 倍），正常履约加分，逾期扣分
+  - 租期到期提醒：登录后提示 2 天内到期的租赁订单
   - 地址管理：新增/编辑/删除/设置默认
   - 商品评价：查看评价列表、订单完成后发表评价
   - DIY 装机评估：选择 CPU/GPU/内存后评估总分 + 典型游戏帧率（1080P/2K/4K）
+  - AI 配置单点评：对 DIY 装机配置单生成吐槽/专家/小白三种风格分析与建议
   - 装机单：登录后可保存/修改/删除个人装机配置
 
 - 管理端 / 商家端（后台）
   - 权限/菜单/用户/角色/部门/字典/日志等（RuoYi 原生能力）
   - 商品管理：维护商品（租赁/出售/租售一体）、库存、关联商家（deptId 数据隔离）
+  - 库存预警：定时检查库存低于阈值的商品，生成预警记录供后台查看/处理（支持手动触发）
   - 订单管理（商家维度）：发货、确认归还、退款审核、修改收货信息等
+  - 逾期租赁检查：定时扫描逾期明细，按规则扣除押金并扣信用分
   - 硬件基础数据维护：CPU/GPU/内存/主板/电源等
   - 商家仪表盘：今日订单、待发货、租赁中、商品总数、近 7 日趋势
   - 游戏基准数据维护：用于装机帧率评估的基准数据
@@ -123,39 +129,42 @@ flowchart LR
 
 > 只看这节，你就能知道“在哪儿改什么”。
 
-### 前端（`src/`）
+### 前端（`zNova-ui/src/`）
 
-- `src/main.js`：入口，注册全局组件/工具方法
-- `src/router/index.js`：路由（后台/前台/portal 混合在同一套路由里）
-- `src/permission.js`：路由守卫（后台需要 Admin Token；`/computer-market` 和 `/portal` 放行）
-- `src/utils/request.js`：Axios 封装（区分后台 token 与 C 端 token）
-- `src/utils/auth.js`：token 存储（后台 token in cookie；C 端 token in localStorage）
-- `src/api/`：接口封装（按业务域拆分）
-  - `src/api/login.js`：后台登录 `/login`
-  - `src/api/menu.js`：动态路由 `/getRouters`
-  - `src/api/appLogin.js`：C 端登录/注册/用户信息 `/app/**`
-  - `src/api/front/`：前台商品/硬件/性能评估/装机单 `/front/**`
-  - `src/api/shop/cart.js`：购物车 `/app/cart/**`
-  - `src/api/portal/`：C 端地址/订单/用户 `/app/**`
-  - `src/api/merchant/dashboard.js`：商家仪表盘 `/merchant/dashboard/**`
-  - `src/api/system/`：后台业务模块 `/system/**`
-- `src/views/`：页面
-  - `src/views/computerMarket/`：C 端商城
-  - `src/views/portal/`：C 端登录注册 + 用户中心 + 结算/支付
-  - `src/views/system/`：后台业务模块
-  - `src/views/dashboard/`：后台首页（管理员/商家）
+- `zNova-ui/src/main.js`：入口，注册全局组件/工具方法
+- `zNova-ui/src/router/index.js`：路由（后台/前台/portal 混合在同一套路由里）
+- `zNova-ui/src/permission.js`：路由守卫（后台需要 Admin Token；`/computer-market` 和 `/portal` 放行）
+- `zNova-ui/src/utils/request.js`：Axios 封装（区分后台 token 与 C 端 token）
+- `zNova-ui/src/utils/auth.js`：token 存储（后台 token in cookie；C 端 token in localStorage）
+- `zNova-ui/src/api/`：接口封装（按业务域拆分）
+  - `zNova-ui/src/api/login.js`：后台登录 `/login`
+  - `zNova-ui/src/api/menu.js`：动态路由 `/getRouters`
+  - `zNova-ui/src/api/appLogin.js`：C 端登录/注册/用户信息 `/app/**`
+  - `zNova-ui/src/api/front/`：前台商品/硬件/性能评估/装机单/推荐 `/front/**`
+    - `zNova-ui/src/api/front/recommend.js`：协同过滤推荐 `/front/recommend/**`
+  - `zNova-ui/src/api/system/aiReview.js`：AI 配置单点评 `/system/ai/review`
+  - `zNova-ui/src/api/shop/cart.js`：购物车 `/app/cart/**`
+  - `zNova-ui/src/api/portal/`：C 端地址/订单/用户 `/app/**`
+  - `zNova-ui/src/api/merchant/dashboard.js`：商家仪表盘 `/merchant/dashboard/**`
+  - `zNova-ui/src/api/merchant/stock.js`：库存预警 `/merchant/stock/warning/**`
+  - `zNova-ui/src/api/system/`：后台业务模块 `/system/**`
+- `zNova-ui/src/views/`：页面
+  - `zNova-ui/src/views/computerMarket/`：C 端商城
+  - `zNova-ui/src/views/portal/`：C 端登录注册 + 用户中心 + 结算/支付
+  - `zNova-ui/src/views/system/`：后台业务模块
+  - `zNova-ui/src/views/dashboard/`：后台首页（管理员/商家）
 
-### 后端（`zNova/`）
+### 后端（多模块 Maven）
 
-> `zNova` 是 Spring Boot 多模块 Maven 工程。
+> 后端是 Spring Boot 多模块 Maven 工程（模块位于仓库根目录）。
 
-- `zNova/zNova-admin`：启动入口（`com.zNova.zNovaApplication`），聚合 web/controller
-- `zNova/zNova-framework`：框架层（安全、拦截器、通用配置等）
-- `zNova/zNova-system`：系统基础模块（用户/角色/菜单/字典等 RuoYi 标准表）
-- `zNova/zNova-merchant`：本项目业务核心模块（商品、订单、购物车、C 端用户、硬件、性能评估、商家仪表盘等）
-- `zNova/zNova-quartz`：定时任务模块
-- `zNova/zNova-generator`：代码生成模块
-- `zNova/zNova-common`：通用工具/实体/常量
+- `zNova-admin`：启动入口（`com.zNova.zNovaApplication`），聚合 web/controller
+- `zNova-framework`：框架层（安全、拦截器、通用配置等）
+- `zNova-system`：系统基础模块（用户/角色/菜单/字典等 RuoYi 标准表）
+- `zNova-merchant`：本项目业务核心模块（商品、订单、购物车、C 端用户、硬件、性能评估、推荐、信用分等）
+- `zNova-quartz`：定时任务模块（逾期检查/库存预警/到期提醒）
+- `zNova-generator`：代码生成模块
+- `zNova-common`：通用工具/实体/常量
 
 ---
 
@@ -174,7 +183,7 @@ flowchart LR
 
 ### 多商家拆单（一个 create 可能返回多个 orderNo）
 
-在 `zNova/zNova-merchant/src/main/java/com/zNova/system/controller/AppOrderController.java` 的 `create` 方法中：
+在 `zNova-merchant/src/main/java/com/zNova/system/controller/AppOrderController.java` 的 `create` 方法中：
 
 - 创建订单时会把 `items` 按商品的 `deptId(商家/部门)` 分组
 - 同一次提交如果买了多个商家的商品，会拆成多个子订单
@@ -183,7 +192,7 @@ flowchart LR
 
 ### 订单状态（后端常量）
 
-来自 `zNova/zNova-merchant/src/main/java/com/zNova/system/service/impl/ShopOrderServiceImpl.java`：
+来自 `zNova-merchant/src/main/java/com/zNova/system/service/impl/ShopOrderServiceImpl.java`：
 
 - `0`：待支付（WAIT_PAY）
 - `1`：已支付/待发货（PAID）
@@ -222,6 +231,31 @@ stateDiagram-v2
   - 退款审核通过（`status 5 -> 6`）会回滚库存
   - 商家确认归还（`status 7 -> 3`）会回滚库存
 
+### 信用分与押金（租赁风控）
+
+- 信用分字段：`app_user.credit_score`（默认兜底为 `500`）
+- 押金档位（创建订单时计算）：`creditScore >= 600` 免押（倍率 `0`）；`400-599` 为 6 倍；`<400` 为 10 倍
+- 租赁明细押金：`日租金 * 倍率 * 数量`；订单押金汇总存入 `shop_order.deposit_amount`（购买业务押金为 `0`）
+- 信用分变化：正常完成/归还 +50（逾期归还不加）；首次逾期 -100（订单维度只扣一次）
+
+### 租期到期提醒（归还提醒）
+
+- 前端登录后调用 `GET /app/order/expiring-soon` 查询 **2 天内到期** 的租赁明细，用于弹窗提醒
+- 定时任务（Quartz）：`rentalExpiryWarningTask.checkExpiringSoon()`（默认每天 9:00，见 `zNova-quartz/src/main/java/com/zNova/quartz/task/RentalExpiryWarningTask.java`）
+
+### 逾期检查与扣款（定时任务）
+
+- 定时任务（Quartz）：`overdueRentalTask.checkAndDeduct()`（默认每天 1:00，见 `zNova-quartz/src/main/java/com/zNova/quartz/task/OverdueRentalTask.java`）
+- 逾期扣款：`日租金 * 2 * 数量 * 新增逾期天数`，扣减 `shop_order.deposit_amount`（最低为 0）
+- 幂等处理：使用 `shop_order_item.overdue_deduct_days` 记录已扣天数，避免重复扣款
+- 首次逾期：标记 `shop_order.is_overdue=1` 并扣信用分 -100
+
+### 个性化推荐（协同过滤）
+
+- 交互数据：`user_product_interaction`（浏览 `interaction_type=2` / 下单 `interaction_type=1`；权重分别为 1/5）
+- 协同过滤（Item-Based CF，余弦相似度）：`sim(A,B) = coCount / sqrt(userCount(A) * userCount(B))`；无数据时回退热门商品（按 `SUM(weight)`）
+- 接口前缀：`/front/recommend/**`（商品详情页会调用 `POST /front/recommend/view/{productId}` 收集浏览行为）
+
 ---
 
 <a id="frontend"></a>
@@ -229,14 +263,14 @@ stateDiagram-v2
 
 ### 路由与鉴权（非常关键）
 
-- 路由守卫：`src/permission.js`
+- 路由守卫：`zNova-ui/src/permission.js`
   - 访问 `/computer-market/**`：直接放行（不校验后台 token）
   - 访问 `/portal/**`：直接放行（但页面内会校验 `app_token`，没登录会跳转到 `/portal/login`）
   - 其他（后台）页面：需要 `Admin-Token`（cookie）才能访问
 
 ### 双 Token 机制（后台 & C 端）
 
-Axios 封装在 `src/utils/request.js`，核心规则：
+Axios 封装在 `zNova-ui/src/utils/request.js`，核心规则：
 
 - 请求 URL 以 `/app/` 或 `/front/` 开头：视为 **C 端接口**
   - Token 存储在 `localStorage(app_token)`
@@ -249,7 +283,7 @@ Axios 封装在 `src/utils/request.js`，核心规则：
 
 ### 图片地址处理（本地/OSS 兼容）
 
-`src/utils/ruoyi.js` 中的 `handleImageUrl(url)` 规则：
+`zNova-ui/src/utils/ruoyi.js` 中的 `handleImageUrl(url)` 规则：
 
 - `url` 以 `http(s)://` 开头：认为是 OSS/公网地址，直接返回
 - 否则：按本地相对路径处理，拼接 `import.meta.env.VITE_APP_BASE_API + url`
@@ -258,40 +292,41 @@ Axios 封装在 `src/utils/request.js`，核心规则：
 
 | 路由 | 页面文件 | 功能概述 |
 |---|---|---|
-| `/computer-market` | `src/views/computerMarket/mallHome.vue` | 首页 + 推荐商品 + 评分展示 + 立即购买/租赁 |
-| `/computer-market/rental` | `src/views/computerMarket/shop/rental.vue` | 租赁商品列表（筛选/排序） |
-| `/computer-market/sale` | `src/views/computerMarket/shop/sale.vue` | 出售商品列表（筛选/排序） |
-| `/computer-market/build` | `src/views/computerMarket/shop/build.vue` | DIY 装机性能评估（总分 + 游戏帧率） |
-| `/computer-market/product-detail/:id` | `src/views/computerMarket/shop/detail.vue` | 商品详情 + 加入购物车/立即下单 + 评价 |
-| `/computer-market/shopping-cart` | `src/views/computerMarket/cart/index.vue` | 购物车（租赁/购买分开统计） |
-| `/computer-market/checkout` | `src/views/portal/trade/checkout.vue` | 结算页（地址/租期/备注/提交订单） |
-| `/portal/trade/pay` | `src/views/portal/trade/pay.vue` | 支付页（模拟支付，调用后端 pay 接口） |
-| `/portal/login` | `src/views/portal/login.vue` | C 端登录 |
-| `/portal/register` | `src/views/portal/register.vue` | C 端注册 |
-| `/portal/user/profile` | `src/views/portal/user/profile.vue` | 个人信息/头像/密码 |
-| `/portal/user/address` | `src/views/portal/user/address.vue` | 地址管理 |
-| `/portal/user/order` | `src/views/portal/user/order.vue` | 我的订单（取消/退款/确认/归还） |
+| `/computer-market` | `zNova-ui/src/views/computerMarket/mallHome.vue` | 首页 + 协同过滤推荐/热门 + 评分展示 + 到期提醒 |
+| `/computer-market/rental` | `zNova-ui/src/views/computerMarket/shop/rental.vue` | 租赁商品列表（筛选/排序） |
+| `/computer-market/sale` | `zNova-ui/src/views/computerMarket/shop/sale.vue` | 出售商品列表（筛选/排序） |
+| `/computer-market/build` | `zNova-ui/src/views/computerMarket/shop/build.vue` | DIY 装机性能评估（总分 + 游戏帧率 + AI 配置单点评） |
+| `/computer-market/product-detail/:id` | `zNova-ui/src/views/computerMarket/shop/detail.vue` | 商品详情 + 加入购物车/立即下单 + 评价 |
+| `/computer-market/shopping-cart` | `zNova-ui/src/views/computerMarket/cart/index.vue` | 购物车（租赁/购买分开统计） |
+| `/computer-market/checkout` | `zNova-ui/src/views/portal/trade/checkout.vue` | 结算页（地址/租期/备注/提交订单） |
+| `/portal/trade/pay` | `zNova-ui/src/views/portal/trade/pay.vue` | 支付页（模拟支付，调用后端 pay 接口） |
+| `/portal/login` | `zNova-ui/src/views/portal/login.vue` | C 端登录 |
+| `/portal/register` | `zNova-ui/src/views/portal/register.vue` | C 端注册 |
+| `/portal/user/profile` | `zNova-ui/src/views/portal/user/profile.vue` | 个人信息/头像/密码/信用分 |
+| `/portal/user/address` | `zNova-ui/src/views/portal/user/address.vue` | 地址管理 |
+| `/portal/user/order` | `zNova-ui/src/views/portal/user/order.vue` | 我的订单（取消/退款/确认/归还） |
 
 ### 页面与接口映射（C 端主流程）
 
 | 页面/流程 | 主要调用接口 | 是否需要 C 端登录 |
 |---|---|---|
-| 首页推荐商品 | `GET /front/product/list` | 否 |
-| 商品详情 | `GET /front/product/{id}`、`GET /app/comment/list` | 否 |
+| 首页推荐商品 | `GET /front/product/list`、`GET /front/recommend/personal` | 否 |
+| 租期到期提醒 | `GET /app/order/expiring-soon` | 是 |
+| 商品详情 | `GET /front/product/{id}`、`GET /app/comment/list`、`POST /front/recommend/view/{productId}` | 否 |
 | 加入购物车 | `POST /app/cart` | 是 |
 | 购物车列表 | `GET /app/cart/list`、`PUT /app/cart`、`DELETE /app/cart/{ids}` | 是 |
 | 结算页 | `GET /app/address/list`、`POST /app/order/create` | 是 |
 | 支付页（模拟） | `PUT /app/order/pay/{orderNo}` | 是 |
 | 订单列表/操作 | `GET /app/order/list`、`POST /app/order/cancel`、`POST /app/order/applyRefund`、`PUT /app/order/confirm/{orderNo}`、`PUT /app/order/return/{orderId}` | 是 |
-| DIY 装机评估 | `GET /front/hardware/*/list`、`POST /front/performance/assess` | 否（保存装机单需要登录） |
+| DIY 装机评估 | `GET /front/hardware/*/list`、`POST /front/performance/assess`、`POST /system/ai/review` | 否（保存装机单需要登录） |
 | 装机单（我的配置） | `GET/POST/PUT/DELETE /front/build/**` | 是（读接口未登录返回空列表） |
 
 ### 后台首页（根据角色动态切换）
 
-`src/views/index.vue` 根据 `userStore.roles` 是否包含 `admin` 来切换组件：
+`zNova-ui/src/views/index.vue` 根据 `userStore.roles` 是否包含 `admin` 来切换组件：
 
-- 管理员：`src/views/dashboard/components/AdminDashboard.vue`
-- 商家：`src/views/dashboard/components/MerchantDashboard.vue`
+- 管理员：`zNova-ui/src/views/dashboard/components/AdminDashboard.vue`
+- 商家：`zNova-ui/src/views/dashboard/components/MerchantDashboard.vue`
 
 ---
 
@@ -300,14 +335,14 @@ Axios 封装在 `src/utils/request.js`，核心规则：
 
 ### 启动入口
 
-- 启动类：`zNova/zNova-admin/src/main/java/com/zNova/zNovaApplication.java`
+- 启动类：`zNova-admin/src/main/java/com/zNova/zNovaApplication.java`
 - 默认端口：`8080`（见 `application.yml`）
 
 ### 关键配置文件
 
-- `zNova/zNova-admin/src/main/resources/application.yml`
+- `zNova-admin/src/main/resources/application.yml`
   - 服务端口、Redis、Token 配置、文件上传/OSS 等
-- `zNova/zNova-admin/src/main/resources/application-druid.yml`
+- `zNova-admin/src/main/resources/application-druid.yml`
   - MySQL 数据源（示例库名为 `ry-vue`，请按你的环境调整）
 
 ### Controller 分层（按路由前缀）
@@ -319,17 +354,20 @@ Axios 封装在 `src/utils/request.js`，核心规则：
 
 ### 关键 Controller 索引（建议从这里读业务）
 
-- C 端用户：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/AppUserController.java`（`/app/**`）
-- C 端购物车：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/AppCartController.java`（`/app/cart/**`）
-- C 端地址：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/AppAddressController.java`（`/app/address/**`）
-- C 端订单：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/AppOrderController.java`（`/app/order/**`）
-- C 端评价：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/AppCommentController.java`（`/app/comment/**`）
-- 前台商品：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/FrontProductController.java`（`/front/product/**`）
-- 前台硬件：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/FrontHardwareController.java`（`/front/hardware/**`）
-- 性能评估：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/FrontPerformanceController.java`（`/front/performance/**`）
-- 装机单：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/FrontUserBuildController.java`（`/front/build/**`）
-- 商家仪表盘：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/MerchantDashboardController.java`（`/merchant/dashboard/**`）
-- 商家订单履约：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/ShopOrderController.java`（`/merchant/order/**`）
+- C 端用户：`zNova-merchant/src/main/java/com/zNova/system/controller/AppUserController.java`（`/app/**`）
+- C 端购物车：`zNova-merchant/src/main/java/com/zNova/system/controller/AppCartController.java`（`/app/cart/**`）
+- C 端地址：`zNova-merchant/src/main/java/com/zNova/system/controller/AppAddressController.java`（`/app/address/**`）
+- C 端订单：`zNova-merchant/src/main/java/com/zNova/system/controller/AppOrderController.java`（`/app/order/**`）
+- C 端评价：`zNova-merchant/src/main/java/com/zNova/system/controller/AppCommentController.java`（`/app/comment/**`）
+- 前台商品：`zNova-merchant/src/main/java/com/zNova/system/controller/FrontProductController.java`（`/front/product/**`）
+- 前台推荐：`zNova-merchant/src/main/java/com/zNova/system/controller/FrontRecommendController.java`（`/front/recommend/**`）
+- 前台硬件：`zNova-merchant/src/main/java/com/zNova/system/controller/FrontHardwareController.java`（`/front/hardware/**`）
+- 性能评估：`zNova-merchant/src/main/java/com/zNova/system/controller/FrontPerformanceController.java`（`/front/performance/**`）
+- 装机单：`zNova-merchant/src/main/java/com/zNova/system/controller/FrontUserBuildController.java`（`/front/build/**`）
+- AI 配置单点评：`zNova-merchant/src/main/java/com/zNova/system/controller/AiReviewController.java`（`/system/ai/**`）
+- 商家仪表盘：`zNova-merchant/src/main/java/com/zNova/system/controller/MerchantDashboardController.java`（`/merchant/dashboard/**`）
+- 商家订单履约：`zNova-merchant/src/main/java/com/zNova/system/controller/ShopOrderController.java`（`/merchant/order/**`）
+- 库存预警：`zNova-merchant/src/main/java/com/zNova/system/controller/StockWarningController.java`（`/merchant/stock/warning/**`）
 
 ### 部门（deptId）与数据隔离（商家维度）
 
@@ -351,7 +389,7 @@ Axios 封装在 `src/utils/request.js`，核心规则：
 - `AjaxResult`（常见字段：`code`、`msg`、`data`）
 - `TableDataInfo`（分页列表：`total`、`rows`，并携带 `code/msg`）
 
-> 前端 `src/utils/request.js` 默认以 `res.data.code` 判断是否成功（成功通常为 `200`）。
+> 前端 `zNova-ui/src/utils/request.js` 默认以 `res.data.code` 判断是否成功（成功通常为 `200`）。
 
 ### 鉴权约定
 
@@ -366,7 +404,7 @@ Authorization: Bearer <token>
 
 ### C 端用户（`/app`）
 
-对应前端：`src/api/appLogin.js`、`src/api/portal/user.js`
+对应前端：`zNova-ui/src/api/appLogin.js`、`zNova-ui/src/api/portal/user.js`
 
 - `POST /app/login`：C 端登录（返回 `token`）
 - `POST /app/register`：C 端注册
@@ -388,7 +426,7 @@ Authorization: Bearer <token>
 
 ### C 端地址（`/app/address`）
 
-对应前端：`src/api/portal/address.js`
+对应前端：`zNova-ui/src/api/portal/address.js`
 
 - `GET /app/address/list`
 - `POST /app/address/add`
@@ -412,7 +450,7 @@ Authorization: Bearer <token>
 
 ### C 端购物车（`/app/cart`）
 
-对应前端：`src/api/shop/cart.js`
+对应前端：`zNova-ui/src/api/shop/cart.js`
 
 - `GET /app/cart/list`：我的购物车
 - `POST /app/cart`：加入购物车
@@ -431,13 +469,14 @@ Authorization: Bearer <token>
 
 ### C 端订单（`/app/order`）
 
-对应前端：`src/api/portal/order.js`
+对应前端：`zNova-ui/src/api/portal/order.js`
 
 - `POST /app/order/create`：创建订单（支持拆单）
 - `GET /app/order/list`：我的订单列表（分页，含明细）
 - `PUT /app/order/pay/{orderNo}`：模拟支付（状态 0 -> 1）
 - `PUT /app/order/confirm/{orderNo}`：确认收货/归还完成（状态 -> 3）
 - `PUT /app/order/return/{orderId}`：申请归还（租赁场景，状态 2 -> 7）
+- `GET /app/order/expiring-soon`：获取 2 天内到期租赁订单（归还提醒）
 - `POST /app/order/cancel`：取消订单（仅待支付可取消，状态 -> 4，并回滚库存）
 - `POST /app/order/applyRefund`：申请退款（仅待发货可申请，状态 -> 5）
 
@@ -462,14 +501,14 @@ Authorization: Bearer <token>
 
 ### 商品评价（`/app/comment`）
 
-对应前端：`src/api/front/comment.js`
+对应前端：`zNova-ui/src/api/front/comment.js`
 
 - `GET /app/comment/list?productId=xxx`：评价列表（匿名可访问）
 - `POST /app/comment/add`：发表评价（必须订单已完成 `status=3`）
 
 ### 前台商品/硬件/评估（`/front`）
 
-对应前端：`src/api/front/*`
+对应前端：`zNova-ui/src/api/front/*`
 
 - 商品
   - `GET /front/product/list`
@@ -482,11 +521,22 @@ Authorization: Bearer <token>
   - `GET /front/hardware/power/list`
 - 性能评估
   - `POST /front/performance/assess`
+- 推荐（协同过滤）
+  - `GET /front/recommend/personal?limit=10`
+  - `GET /front/recommend/hot?limit=10`
+  - `GET /front/recommend/similar/{productId}?limit=6`
+  - `POST /front/recommend/view/{productId}`
 - 装机单（需要登录才可写，读接口未登录会返回空列表）
   - `GET /front/build/list`
   - `POST /front/build`
   - `PUT /front/build`
   - `DELETE /front/build/{buildIds}`
+
+### AI 配置单点评（`/system/ai`）
+
+对应前端：`zNova-ui/src/api/system/aiReview.js`
+
+- `POST /system/ai/review`：对 DIY 配置单进行 AI 点评（匿名可访问，最少需要 `cpuModel` + `gpuModel`，可选 `style=fun/expert/beginner`）
 
 性能评估请求示例：
 
@@ -515,7 +565,7 @@ Authorization: Bearer <token>
 
 ### 商家后台（`/merchant`）
 
-对应前端：`src/api/merchant/dashboard.js`、`src/views/system/ShopOrder/index.vue`
+对应前端：`zNova-ui/src/api/merchant/dashboard.js`、`zNova-ui/src/views/system/ShopOrder/index.vue`
 
 - 仪表盘
   - `GET /merchant/dashboard/stats`
@@ -528,14 +578,19 @@ Authorization: Bearer <token>
   - `POST /merchant/order/auditRefund`：退款审核（5 -> 6 or 1）
   - `PUT /merchant/order/updateAddress`：修改收货信息
   - `GET /merchant/order/detail/{orderId}`：订单详情（含用户信息）
+- 库存预警
+  - `GET /merchant/stock/warning/list`
+  - `GET /merchant/stock/warning/products`
+  - `PUT /merchant/stock/warning/handle/{warningId}`
+  - `POST /merchant/stock/warning/check`（管理员）
 
 ### 后台登录与动态路由（RuoYi）
 
-对应前端：`src/api/login.js`、`src/api/menu.js`、`src/store/modules/permission.js`
+对应前端：`zNova-ui/src/api/login.js`、`zNova-ui/src/api/menu.js`、`zNova-ui/src/store/modules/permission.js`
 
 - `POST /login`：后台登录
 - `GET /getInfo`：获取用户/角色/权限
-- `GET /getRouters`：获取菜单路由（前端根据返回的 `component` 动态 `import` 对应 `src/views/**`）
+- `GET /getRouters`：获取菜单路由（前端根据返回的 `component` 动态 `import` 对应 `zNova-ui/src/views/**`）
 
 ---
 
@@ -548,17 +603,17 @@ Authorization: Bearer <token>
 
 | 表名 | 作用 | 关键字段（非完整） |
 |---|---|---|
-| `biz_product` | 商品主表（租赁/出售/租售一体） | `id`、`product_name`、`product_type`、`rent_price`、`sale_price`、`stock_quantity`、`available_rent`、`image_url`、`dept_id` |
+| `biz_product` | 商品主表（租赁/出售/租售一体） | `id`、`product_name`、`product_type`、`rent_price`、`sale_price`、`stock_quantity`、`min_stock`、`image_url`、`dept_id` |
 | `shop_cart` | 购物车 | `cart_id`、`user_id`、`product_id`、`quantity`、`business_type`、`is_checked` |
-| `shop_order` | 订单主表 | `order_id`、`order_no`、`user_id`、`total_amount`、`status`、`pay_type`、`receiver_*`、`dept_id` |
-| `shop_order_item` | 订单明细 | `id`、`order_id`、`product_id`、`business_type`、`price`、`quantity`、`rent_start_time`、`rent_end_time`、`rent_days` |
+| `shop_order` | 订单主表 | `order_id`、`order_no`、`user_id`、`total_amount`、`deposit_amount`、`is_overdue`、`status`、`pay_type`、`receiver_*`、`dept_id` |
+| `shop_order_item` | 订单明细 | `id`、`order_id`、`product_id`、`business_type`、`price`、`quantity`、`rent_start_time`、`rent_end_time`、`rent_days`、`deposit`、`overdue_deduct_days` |
 | `shop_comment` | 商品评价 | `comment_id`、`order_id`、`product_id`、`star`、`content`、`user_id`、`nickname` |
 
 ### C 端用户与地址
 
 | 表名 | 作用 | 关键字段 |
 |---|---|---|
-| `app_user` | C 端用户 | `user_id`、`username`、`password(bcrypt)`、`nickname`、`avatar`、`credit_score`、`balance`、`status` |
+| `app_user` | C 端用户 | `user_id`、`username`、`password(bcrypt)`、`nickname`、`avatar`、`credit_score`、`balance`、`frozen_deposit`、`status` |
 | `app_address` | 收货地址 | `address_id`、`user_id`、`real_name`、`phone`、`province/city/district`、`detail_address`、`is_default` |
 
 ### 硬件与游戏基准（性能评估用）
@@ -575,12 +630,19 @@ Authorization: Bearer <token>
 | `sys_game_ram_benchmark` | 内存频率修正 | `game_id`、`ram_type`、`frequency`、`ratio` |
 | `sys_user_build` | 用户装机单 | CPU/GPU/内存/电源等选择 + `performance_score` + `total_price` |
 
+### 推荐与 AI
+
+| 表名 | 作用 | 关键字段 |
+|---|---|---|
+| `user_product_interaction` | 协同过滤交互表 | `user_id`、`product_id`、`interaction_type`、`weight`、`order_id`、`create_time` |
+| `sys_ai_review_log` | AI 点评日志 | `id`、`user_id`、`hardware_summary`、`ai_response`、`create_time` |
+
 ---
 
 <a id="perf"></a>
 ## 性能评估算法说明
 
-> 代码位置：`zNova/zNova-merchant/src/main/java/com/zNova/system/controller/FrontPerformanceController.java` + `.../service/impl/PerformanceService.java`
+> 代码位置：`zNova-merchant/src/main/java/com/zNova/system/controller/FrontPerformanceController.java` + `.../service/impl/PerformanceService.java`
 
 ### 总分（totalScore）计算
 
@@ -632,29 +694,29 @@ Authorization: Bearer <token>
 
 1) 修改数据库与 Redis 配置：
 
-- `zNova/zNova-admin/src/main/resources/application-druid.yml`
-- `zNova/zNova-admin/src/main/resources/application.yml`
+- `zNova-admin/src/main/resources/application-druid.yml`
+- `zNova-admin/src/main/resources/application.yml`
 
 2) 启动方式二选一：
 
 ```bash
 # 方式 A：Maven 打包
-cd zNova
 mvn -DskipTests clean package
 java -jar zNova-admin/target/zNova-admin.jar
 ```
 
 或：
 
-- 方式 B：IDE 直接运行 `zNova/zNova-admin/src/main/java/com/zNova/zNovaApplication.java`
+- 方式 B：IDE 直接运行 `zNova-admin/src/main/java/com/zNova/zNovaApplication.java`
 
 ### 启动前端（Web）
 
-> 默认端口为 `80`（可修改 `vite.config.js` 的 `server.port`）。
+> 默认端口为 `80`（可修改 `zNova-ui/vite.config.js` 的 `server.port`）。
 
 推荐 pnpm：
 
 ```bash
+cd zNova-ui
 pnpm install
 pnpm dev
 ```
@@ -662,19 +724,20 @@ pnpm dev
 也可以 npm：
 
 ```bash
+cd zNova-ui
 npm install
 npm run dev
 ```
 
 Windows 下还提供了脚本（使用 yarn）：
 
-- `bin/package.bat`：安装依赖
-- `bin/run-web.bat`：启动开发
-- `bin/build.bat`：生产构建
+- `zNova-ui/bin/package.bat`：安装依赖
+- `zNova-ui/bin/run-web.bat`：启动开发
+- `zNova-ui/bin/build.bat`：生产构建
 
 ### 代理说明（非常关键）
 
-`vite.config.js` 里配置：
+`zNova-ui/vite.config.js` 里配置：
 
 - `/dev-api` -> `http://localhost:8080`
 - 并通过 `rewrite` 去掉 `/dev-api` 前缀
@@ -689,15 +752,15 @@ Windows 下还提供了脚本（使用 yarn）：
 ### 前端构建
 
 ```bash
+cd zNova-ui
 pnpm build:prod
 ```
 
-输出目录：`dist/`
+输出目录：`zNova-ui/dist/`
 
 ### 后端构建
 
 ```bash
-cd zNova
 mvn -DskipTests clean package
 ```
 
@@ -716,18 +779,18 @@ location / {
 
 ### 前端环境变量（`.env.*`）
 
-- `.env.development`
+- `zNova-ui/.env.development`
   - `VITE_APP_TITLE`：页面标题
   - `VITE_APP_ENV=development`
   - `VITE_APP_BASE_API=/dev-api`
-- `.env.production`
+- `zNova-ui/.env.production`
   - `VITE_APP_ENV=production`
   - `VITE_APP_BASE_API=/prod-api`
   - `VITE_BUILD_COMPRESS=gzip`（构建压缩）
-- `.env.staging`
+- `zNova-ui/.env.staging`
   - `VITE_APP_ENV=staging`
   - `VITE_APP_BASE_API=/stage-api`
-- `.env.oss.example`
+- `zNova-ui/.env.oss.example`
   - OSS 示例（主要用于头像/图片存储策略说明）
 
 ### 后端配置要点（`application*.yml`）
@@ -740,6 +803,22 @@ location / {
 
 > Swagger（springfox）已引入，通常可在 `http://localhost:8080/swagger-ui/` 或 `http://localhost:8080/swagger-ui/index.html` 查看接口文档（具体以实际配置为准）。
 
+### Quartz 定时任务（`sys_job`）
+
+> 可在后台「定时任务」菜单中新增，也可直接插入 `sys_job` 表。关键是 `invoke_target` 与 `cron_expression`。
+
+- 逾期租赁检查：`invoke_target=overdueRentalTask.checkAndDeduct()`，`cron_expression=0 0 1 * * ?`
+- 库存预警检查：`invoke_target=stockWarningTask.checkStock()`，`cron_expression=0 0 9 * * ?`
+- 租期到期提醒：`invoke_target=rentalExpiryWarningTask.checkExpiringSoon()`，`cron_expression=0 0 9 * * ?`
+
+### AI 配置单点评（DeepSeek / ModelScope）
+
+- 需要配置 `application.yml`（未配置 `api-key` 会直接报错）：
+  - `ai.review.provider`：`deepseek`（默认）或 `modelscope`
+  - `ai.review.deepseek.api-key` / `ai.review.modelscope.api-key`
+  - `ai.review.deepseek.model` / `ai.review.modelscope.model`
+  - `ai.review.temperature`（默认 `0.9`）
+
 ---
 
 <a id="guide"></a>
@@ -747,9 +826,9 @@ location / {
 
 ### 新增一个 C 端页面（示例流程）
 
-1. 在 `src/views/computerMarket/` 或 `src/views/portal/` 新建页面组件
-2. 在 `src/router/index.js` 中添加路由（C 端路由通常是 `hidden: true`，不进入后台侧边栏）
-3. 需要接口时，在 `src/api/front/` 或 `src/api/portal/` 新建 API 封装
+1. 在 `zNova-ui/src/views/computerMarket/` 或 `zNova-ui/src/views/portal/` 新建页面组件
+2. 在 `zNova-ui/src/router/index.js` 中添加路由（C 端路由通常是 `hidden: true`，不进入后台侧边栏）
+3. 需要接口时，在 `zNova-ui/src/api/front/` 或 `zNova-ui/src/api/portal/` 新建 API 封装
 4. 如果涉及登录态，使用 `app_token`（`localStorage`）并按 `/app/**` 或 `/front/**` 前缀走接口
 
 ### 新增一个后台模块（RuoYi 的标准方式）
@@ -757,13 +836,13 @@ location / {
 1. 后端新增 Controller/Service/Mapper（推荐放在 `zNova-merchant` 或对应业务模块）
 2. 配套数据库表与权限标识（如 `system:xxx:list`）
 3. 在后台菜单中新增配置（`sys_menu`），后端 `/getRouters` 会下发路由
-4. 前端无需手写路由：`src/store/modules/permission.js` 会根据 `component` 字段动态加载 `src/views/**`
+4. 前端无需手写路由：`zNova-ui/src/store/modules/permission.js` 会根据 `component` 字段动态加载 `zNova-ui/src/views/**`
 
 ### 代码风格约定（仓库内默认）
 
 - 2 空格缩进、尽量不写分号
 - 路由/URL 使用 `kebab-case`
-- API 封装按业务域放到 `src/api/**`
+- API 封装按业务域放到 `zNova-ui/src/api/**`
 
 ---
 
@@ -772,19 +851,19 @@ location / {
 
 ### 前端启动失败：端口 80 被占用
 
-- 修改 `vite.config.js` 的 `server.port`，例如改为 `5173`
+- 修改 `zNova-ui/vite.config.js` 的 `server.port`，例如改为 `5173`
 - 同时注意更新文档中的访问地址
 
 ### 401/未登录问题（最常见）
 
 - 访问后台页面需要 `Admin-Token`（cookie）
 - 访问 C 端“需要登录”的功能需要 `app_token`（localStorage）
-- 前端 `src/utils/request.js` 会根据 URL 前缀选择 token
+- 前端 `zNova-ui/src/utils/request.js` 会根据 URL 前缀选择 token
 
 ### 接口 404（代理未生效）
 
-- 确认 `.env.development` 的 `VITE_APP_BASE_API=/dev-api`
-- 确认 `vite.config.js` 的 proxy 正确指向后端 `8080`
+- 确认 `zNova-ui/.env.development` 的 `VITE_APP_BASE_API=/dev-api`
+- 确认 `zNova-ui/vite.config.js` 的 proxy 正确指向后端 `8080`
 
 ### 装机评估没数据/帧率为 0
 

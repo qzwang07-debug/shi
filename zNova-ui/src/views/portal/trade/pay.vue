@@ -18,6 +18,16 @@
             <span class="label">支付金额：</span>
             <span class="amount">¥ {{ amount }}</span>
           </div>
+          <div v-if="orderBreakdown.deposit > 0" class="amount-detail">
+            <div class="detail-item">
+              <span class="detail-label">租金总额:</span>
+              <span class="detail-value">¥{{ orderBreakdown.rent.toFixed(2) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">押金总额:</span>
+              <span class="detail-value">¥{{ orderBreakdown.deposit.toFixed(2) }}</span>
+            </div>
+          </div>
         </div>
 
         <el-divider />
@@ -77,16 +87,71 @@ import { ElMessage } from 'element-plus';
 import { Loading } from '@element-plus/icons-vue';
 import { getAppToken } from '@/utils/auth';
 import { handleImageUrl } from '@/utils/ruoyi';
+import useAppUserStore from '@/store/modules/appUser';
 
 const route = useRoute();
 const router = useRouter();
+const appUserStore = useAppUserStore();
 
 // 响应式数据
 const orderNos = route.query.orderNos ? route.query.orderNos.split(',') : [route.query.orderNo];
-const amount = route.query.amount;
+const amount = ref(route.query.amount);
 const loading = ref(false);
 const payType = ref('wechat'); // 默认微信
 
+// 金额明细
+const orderBreakdown = ref({
+  rent: 0,
+  deposit: 0,
+  total: 0
+});
+
+const orders = ref([]);
+
+/** 获取订单详情 */
+const fetchOrderDetails = async () => {
+  const token = getAppToken();
+  if (!token) return;
+
+  try {
+    const fetchPromises = orderNos.map(orderNo => {
+      return request({
+        url: '/app/order/list',
+        method: 'get',
+        params: { orderNo }
+      });
+    });
+
+    const results = await Promise.all(fetchPromises);
+    let totalRent = 0;
+    let totalDeposit = 0;
+    let totalAmount = 0;
+
+    results.forEach(res => {
+      const orderList = res.rows || res.data || [];
+      if (orderList.length > 0) {
+        const order = orderList[0];
+        orders.value.push(order);
+        const dep = Number(order.depositAmount) || 0;
+        const tot = Number(order.totalAmount) || 0;
+        totalDeposit += dep;
+        totalRent += (tot - dep);
+        totalAmount += tot;
+      }
+    });
+
+    orderBreakdown.value = {
+      rent: totalRent,
+      deposit: totalDeposit,
+      total: totalAmount
+    };
+    
+    // 强制使用后端计算的总额，覆盖 query 中的可能存在的错误金额
+    amount.value = totalAmount.toFixed(2);
+  } catch (error) {
+    console.error("获取订单详情失败", error);
+  }
+};
 
 /** 模拟支付处理 */
 function handleSimulatePay() {
@@ -104,9 +169,17 @@ function handleSimulatePay() {
   setTimeout(() => {
     // 为每个订单创建支付请求
     const payPromises = orderNos.map(orderNo => {
+      const order = orders.value.find(o => o.orderNo === orderNo);
+      const payData = order ? {
+        totalAmount: order.totalAmount,
+        depositAmount: order.depositAmount,
+        rentAmount: (Number(order.totalAmount) - Number(order.depositAmount)).toFixed(2)
+      } : {};
+
       return request({
         url: `/app/order/pay/${orderNo}`,
         method: 'put',
+        data: payData,
         headers: {
           'Authorization': 'Bearer ' + token
         }
@@ -115,9 +188,12 @@ function handleSimulatePay() {
 
     // 使用Promise.all等待所有支付请求完成
     Promise.all(payPromises)
-      .then(() => {
+      .then(async () => {
         loading.value = false;
         ElMessage.success('恭喜您，所有订单支付成功！');
+        
+        // 关键：支付成功后刷新用户信息（更新押金余额）
+        await appUserStore.fetchUserInfo();
         
         // 跳转回我的订单页
         router.push({
@@ -136,6 +212,10 @@ function handleSimulatePay() {
       });
   }, 1000);
 }
+
+onMounted(() => {
+  fetchOrderDetails();
+});
 
 /** 取消/稍后支付 */
 function cancelPay() {
@@ -191,6 +271,35 @@ function cancelPay() {
             font-size: 28px;
             color: #f56c6c;
             font-weight: bold;
+          }
+        }
+
+        .amount-detail {
+          background-color: #f8f9fa;
+          padding: 12px;
+          border-radius: 8px;
+          margin-top: 10px;
+          display: inline-block;
+          min-width: 240px;
+
+          .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+            
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            .detail-label {
+              color: #909399;
+            }
+
+            .detail-value {
+              color: #606266;
+              font-weight: 500;
+            }
           }
         }
       }

@@ -1,5 +1,6 @@
 package com.zNova.system.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Date;
 import com.zNova.common.utils.DateUtils;
@@ -130,5 +131,48 @@ public class AppUserServiceImpl implements IAppUserService
         appUser.setLoginIp(loginIp);
         appUser.setLoginDate(loginDate);
         return appUserMapper.updateAppUser(appUser);
+    }
+
+    /**
+     * 信用分增量更新（原子操作，避免并发问题）
+     *
+     * @param userId 用户ID
+     * @param delta 增量（正数加分，负数减分）
+     * @return 结果
+     */
+    @Override
+    public int updateCreditScoreDelta(Long userId, int delta)
+    {
+        return appUserMapper.updateCreditScoreDelta(userId, delta);
+    }
+
+    /**
+     * 冻结押金：增加用户的冻结押金金额（下单时调用）
+     *
+     * @param userId 用户ID
+     * @param amount 冻结金额
+     * @return 结果
+     */
+    @Override
+    public int freezeDeposit(Long userId, BigDecimal amount)
+    {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return 0; // 无需冻结
+        }
+        return appUserMapper.freezeDeposit(userId, amount);
+    }
+
+    /**
+     * 解冻押金：减少冻结押金，增加可用余额（商家确认归还后调用）
+     *
+     * @param userId 用户ID
+     * @param amount 解冻金额（从冻结押金中扣除）
+     * @param refundAmount 返还金额（加到余额中，可能因扣款而小于amount）
+     * @return 结果
+     */
+    @Override
+    public int unfreezeDeposit(Long userId, BigDecimal amount, BigDecimal refundAmount)
+    {
+        return appUserMapper.unfreezeDeposit(userId, amount, refundAmount);
     }
 }

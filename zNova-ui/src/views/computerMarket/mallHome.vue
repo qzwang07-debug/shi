@@ -61,8 +61,8 @@
 
         <!-- 热门机型标题 -->
         <div class="section-header">
-          <h2>热门机型推荐</h2>
-          <span class="subtitle">Hot Recommendations</span>
+          <h2>{{ recommendTitle }}</h2>
+          <span class="subtitle">{{ recommendSubtitle }}</span>
         </div>
 
         <!-- 商品列表展示区域 -->
@@ -169,11 +169,14 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 // 引入图标
 import { Goods, Timer, Cpu, ArrowRight } from '@element-plus/icons-vue';
+import { getPersonalRecommend, getHotProducts } from "@/api/front/recommend";
 import { listFrontProduct } from "@/api/front/product";
+import { getAppToken } from "@/utils/auth";
 import Header from './Header.vue'; 
 import { addToCart as addToCartAPI } from '@/api/shop/cart';
 import { handleImageUrl } from '@/utils/ruoyi'
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElNotification } from 'element-plus';
+import { getExpiringOrders } from '@/api/portal/order';
 
 const router = useRouter();
 
@@ -232,16 +235,69 @@ const addToCart = async (product) => {
 };
 
 const productList = ref([]);
+const recommendTitle = ref('热门机型推荐');
+const recommendSubtitle = ref('Hot Recommendations');
 
+const shuffleInPlace = (list) => {
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const temp = list[i]
+    list[i] = list[j]
+    list[j] = temp
+  }
+  return list
+}
 
+const recommendFirst = (allProducts, recommendedIds = []) => {
+  const recommendedIdSet = new Set(recommendedIds)
+  const productById = new Map(allProducts.map(p => [p.id, p]))
+
+  const recommended = []
+  const added = new Set()
+  for (const id of recommendedIds) {
+    if (added.has(id)) continue
+    const product = productById.get(id)
+    if (!product) continue
+    recommended.push(product)
+    added.add(id)
+  }
+
+  const others = allProducts.filter(p => !recommendedIdSet.has(p.id))
+  shuffleInPlace(others)
+  return [...recommended, ...others]
+}
 
 const getProductData = async () => {
   try {
-    const response = await listFrontProduct({});
+    const token = getAppToken();
+    
+    if (token) {
+      recommendTitle.value = '为您推荐';
+      recommendSubtitle.value = 'Recommended For You';
+    } else {
+      recommendTitle.value = '热门机型推荐';
+      recommendSubtitle.value = 'Hot Recommendations';
+    }
+
+    const response = await listFrontProduct({
+      minId: 4,
+      pageSize: 1000
+    });
+    
     if (response.rows && response.rows.length > 0) {
-      const hotProducts = response.rows.filter(product => [1, 2, 3].includes(product.id));
-      productList.value = hotProducts;
-      productList.value.sort((a, b) => a.id - b.id);
+      const validProducts = response.rows.filter(product => product.id >= 4);
+      
+      let recommendedIds = [];
+      try {
+        const recommendRes = await getPersonalRecommend(3);
+        recommendedIds = (recommendRes.data || []).map(p => p.id).filter(Boolean);
+      } catch (e) {
+        console.warn('获取推荐商品失败，将随机展示', e);
+      }
+
+      const orderedProducts = recommendFirst(validProducts, recommendedIds);
+      
+      productList.value = orderedProducts.slice(0, 3);
     } else {
       productList.value = [];
     }
@@ -251,8 +307,49 @@ const getProductData = async () => {
   }
 };
 
+const checkExpiringOrders = async () => {
+  const token = localStorage.getItem('app_token');
+  if (!token) return;
+
+  const hasReminded = sessionStorage.getItem('expiry_reminder_shown');
+  if (hasReminded) return;
+
+  try {
+    const res = await getExpiringOrders();
+    if (res.data && res.data.length > 0) {
+      const items = res.data.map(item => 
+        `<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+           <div style="font-weight: bold; color: #303133;">${item.productName}</div>
+           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+             <span style="color: #E6A23C; font-weight: bold;">剩余 ${item.daysRemaining} 天</span>
+             <span style="color: #909399; font-size: 12px;">${item.rentEndTime}</span>
+           </div>
+         </div>`
+      ).join('');
+      
+      ElNotification({
+        title: '⚠️ 租期到期提醒',
+        dangerouslyUseHTMLString: true,
+        message: `<div style="max-height: 300px; overflow-y: auto;">
+                    <div style="margin-bottom: 10px;">您有 <span style="color: #f56c6c; font-weight: bold;">${res.data.length}</span> 个订单即将到期：</div>
+                    ${items}
+                  </div>`,
+        type: 'warning',
+        duration: 0, 
+        position: 'top-right',
+        offset: 80,
+      });
+      
+      sessionStorage.setItem('expiry_reminder_shown', 'true');
+    }
+  } catch (error) {
+    console.error('Check expiring orders failed:', error);
+  }
+};
+
 onMounted(() => {
   getProductData();
+  checkExpiringOrders();
 });
 </script>
 

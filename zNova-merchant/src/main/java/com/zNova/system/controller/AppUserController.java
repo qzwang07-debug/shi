@@ -108,14 +108,23 @@ public class AppUserController
 
         Object userObj = loginUser.getUser();
         if (userObj instanceof AppUser) {
-            AppUser user = (AppUser) userObj;
+            Long userId = ((AppUser) userObj).getUserId();
+            // 关键：从数据库重新查询最新的用户信息，确保押金等数据实时准确
+            AppUser user = appUserService.selectAppUserByUserId(userId);
+            
+            if (user == null) {
+                return AjaxResult.error("用户不存在");
+            }
 
-            // 设置默认值
+            // 设置默认值（与注册初始值一致：500分）
             if (user.getCreditScore() == null) {
-                user.setCreditScore(700);
+                user.setCreditScore(500);
             }
             if (user.getBalance() == null) {
                 user.setBalance(BigDecimal.ZERO);
+            }
+            if (user.getFrozenDeposit() == null) {
+                user.setFrozenDeposit(BigDecimal.ZERO);
             }
 
             AjaxResult ajax = AjaxResult.success();
@@ -126,6 +135,7 @@ public class AppUserController
             ajax.put("avatar", user.getAvatar());
             ajax.put("creditScore", user.getCreditScore());
             ajax.put("balance", user.getBalance());
+            ajax.put("frozenDeposit", user.getFrozenDeposit());
             return ajax;
         }
 

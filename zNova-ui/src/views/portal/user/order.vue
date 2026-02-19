@@ -68,6 +68,9 @@
                     
                     <div class="price-qty">
                       <div class="price">¥{{ item.price }}</div>
+                      <div v-if="item.businessType === '1' && item.deposit > 0" class="item-deposit">
+                        押金: ¥{{ item.deposit }}
+                      </div>
                       <div class="qty">x{{ item.quantity }}</div>
                       
                       <!-- 单商品评价按钮 (仅完成状态显示) -->
@@ -103,9 +106,24 @@
             <!-- 卡片底部：合计 + 操作按钮 -->
             <div class="card-footer">
               <div class="total-section">
-                <span>实付款</span>
-                <span class="currency">¥</span>
-                <span class="amount">{{ order.totalAmount }}</span>
+                <template v-if="order.depositAmount > 0">
+                  <span class="label">租金:</span>
+                  <span class="currency">¥</span>
+                  <span class="amount sm-amount">{{ (Number(order.totalAmount) - Number(order.depositAmount)).toFixed(2) }}</span>
+                  <span class="divider">|</span>
+                  <span class="label">押金:</span>
+                  <span class="currency">¥</span>
+                  <span class="amount sm-amount">{{ order.depositAmount }}</span>
+                  <span class="divider">|</span>
+                  <span class="label">实付:</span>
+                  <span class="currency">¥</span>
+                  <span class="amount">{{ order.totalAmount }}</span>
+                </template>
+                <template v-else>
+                  <span>实付款</span>
+                  <span class="currency">¥</span>
+                  <span class="amount">{{ order.totalAmount }}</span>
+                </template>
               </div>
 
               <div class="actions-section">
@@ -589,6 +607,19 @@ onMounted(() => {
 }
 .total-section .currency { font-size: 14px; color: #f56c6c; font-weight: bold; margin-left: 5px; }
 .total-section .amount { font-size: 22px; color: #f56c6c; font-weight: bold; margin-left: 2px; }
+.total-section .sm-amount { font-size: 16px; margin-right: 4px; }
+.total-section .divider { margin: 0 10px; color: #e4e7ed; font-size: 14px; font-weight: normal; }
+.total-section .label { font-size: 13px; color: #606266; font-weight: normal; }
+
+.item-deposit {
+  font-size: 12px;
+  color: #e6a23c;
+  background: #fdf6ec;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin: 4px 0;
+  display: inline-block;
+}
 
 .actions-section {
   display: flex;

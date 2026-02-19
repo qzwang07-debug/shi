@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zNova.system.mapper.SysAiReviewLogMapper">
+
+    <insert id="insertSysAiReviewLog" parameterType="SysAiReviewLog" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_ai_review_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="hardwareSummary != null">hardware_summary,</if>
+            <if test="aiResponse != null">ai_response,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="hardwareSummary != null">#{hardwareSummary},</if>
+            <if test="aiResponse != null">#{aiResponse},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+</mapper>

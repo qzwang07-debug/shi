@@ -103,38 +103,38 @@
 
     <el-table v-loading="loading" :data="productList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="商家名称" prop="deptName" align="center" />
-      <el-table-column label="商品ID" align="center" prop="id" />
-      <el-table-column label="商品名称" align="center" prop="productName" />
-      <el-table-column label="租售类型" align="center" prop="productType">
+      <el-table-column label="商家名称" prop="deptName" align="center" width="120" show-overflow-tooltip />
+      <el-table-column label="商品ID" align="center" prop="id" width="80" />
+      <el-table-column label="商品名称" align="center" prop="productName" min-width="150" show-overflow-tooltip />
+      <el-table-column label="租售类型" align="center" prop="productType" width="100">
         <template #default="scope">
           <dict-tag :options="product_type" :value="scope.row.productType"/>
         </template>
       </el-table-column>
-      <el-table-column label="日租金" align="center" prop="rentPrice" />
-      <el-table-column label="销售价格" align="center" prop="salePrice" />
-      <el-table-column label="库存数量" align="center" prop="stockQuantity" />
-      <el-table-column label="可租赁数量" align="center" prop="availableRent" />
-      <el-table-column label="CPU" align="center" prop="cpu" />
-      <el-table-column label="主板" align="center" prop="motherboard" />
-      <el-table-column label="内存" align="center" prop="memory" />
-      <el-table-column label="固态硬盘" align="center" prop="ssd" />
-      <el-table-column label="显卡" align="center" prop="graphicsCard" />
-      <el-table-column label="散热器" align="center" prop="cooler" />
-      <el-table-column label="电源" align="center" prop="powerSupply" />
-      <el-table-column label="机箱" align="center" prop="chassis" />
-      <el-table-column label="图片URL" align="center" prop="imageUrl" width="100">
+      <el-table-column label="日租金" align="center" prop="rentPrice" width="100" />
+      <el-table-column label="销售价格" align="center" prop="salePrice" width="100" />
+      <el-table-column label="库存" align="center" prop="stockQuantity" width="80" />
+      <el-table-column label="可租" align="center" prop="availableRent" width="80" />
+      <el-table-column label="CPU" align="center" prop="cpu" width="150" show-overflow-tooltip />
+      <el-table-column label="显卡" align="center" prop="graphicsCard" width="150" show-overflow-tooltip />
+      <el-table-column label="内存" align="center" prop="memory" width="150" show-overflow-tooltip />
+      <el-table-column label="主板" align="center" prop="motherboard" width="120" show-overflow-tooltip />
+      <el-table-column label="固态" align="center" prop="ssd" width="120" show-overflow-tooltip />
+      <el-table-column label="散热" align="center" prop="cooler" width="100" show-overflow-tooltip />
+      <el-table-column label="电源" align="center" prop="powerSupply" width="100" show-overflow-tooltip />
+      <el-table-column label="机箱" align="center" prop="chassis" width="100" show-overflow-tooltip />
+      <el-table-column label="图片" align="center" prop="imageUrl" width="80">
         <template #default="scope">
           <image-preview :src="scope.row.imageUrl" :width="50" :height="50"/>
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="备注" align="center" prop="remark" show-overflow-tooltip />
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:product:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:product:remove']">删除</el-button>
@@ -151,151 +151,211 @@
     />
 
     <!-- 添加或修改商品对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="productRef" :model="form" :rules="rules" label-width="80px">
-        <!-- 部门选择（平台管理员可见，部门用户隐藏） -->
-        <el-form-item label="部门名称" prop="deptId" v-if="isAdmin">
-          <el-select v-model="form.deptId" placeholder="请选择部门">
-            <el-option
-                v-for="dept in deptList"
-                :key="dept.deptId"
-                :label="dept.deptName"
-                :value="dept.deptId">
-            </el-option>
-          </el-select>
+    <el-dialog :title="title" v-model="open" width="800px" append-to-body>
+      <el-form ref="productRef" :model="form" :rules="rules" label-width="100px">
+        
+        <el-divider content-position="left">基础信息</el-divider>
+        <el-row>
+          <el-col :span="12">
+            <!-- 部门选择（平台管理员可见，部门用户隐藏） -->
+            <el-form-item label="部门名称" prop="deptId" v-if="isAdmin">
+              <el-select v-model="form.deptId" placeholder="请选择部门" style="width: 100%">
+                <el-option
+                    v-for="dept in deptList"
+                    :key="dept.deptId"
+                    :label="dept.deptName"
+                    :value="dept.deptId">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <!-- 部门用户显示部门名称（只读） -->
+            <el-form-item label="部门名称" v-if="!isAdmin">
+              <el-input v-model="form.deptName" disabled placeholder="自动填入当前部门" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="商品名称" prop="productName">
+              <el-input v-model="form.productName" placeholder="请输入商品名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="租售类型" prop="productType">
+              <el-select v-model="form.productType" placeholder="请选择租售类型" style="width: 100%">
+                <el-option
+                  v-for="dict in product_type"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio
+                  v-for="dict in sys_normal_disable"
+                  :key="dict.value"
+                  :label="dict.value"
+                >{{dict.label}}</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+           <el-col :span="24">
+            <el-form-item label="图片URL" prop="imageUrl">
+              <image-upload v-model="form.imageUrl"/>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="备注" prop="remark">
+              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">价格与库存</el-divider>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="日租金" prop="rentPrice">
+              <el-input v-model="form.rentPrice" placeholder="请输入日租金">
+                 <template #append>元</template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="销售价格" prop="salePrice">
+              <el-input v-model="form.salePrice" placeholder="请输入销售价格">
+                 <template #append>元</template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="库存数量" prop="stockQuantity">
+              <el-input-number v-model="form.stockQuantity" :min="0" placeholder="请输入库存数量" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="可租赁数量" prop="availableRent">
+              <el-input-number v-model="form.availableRent" :min="0" placeholder="请输入可租赁数量" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">硬件配置</el-divider>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="CPU" prop="cpu">
+              <el-select 
+                v-model="form.cpu" 
+                placeholder="请选择CPU"
+                filterable
+                remote
+                :remote-method="remoteCpuMethod"
+                :loading="cpuLoading"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in cpuList"
+                  :key="item.model"
+                  :label="`${item.brand} ${item.model}`"
+                  :value="item.model"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="主板" prop="motherboard">
+              <el-input v-model="form.motherboard" placeholder="请输入主板" />
+            </el-form-item>
+          </el-col>
+           <el-col :span="12">
+            <el-form-item label="固态硬盘" prop="ssd">
+              <el-input v-model="form.ssd" placeholder="请输入固态硬盘型号" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="散热器" prop="cooler">
+              <el-input v-model="form.cooler" placeholder="请输入散热器" />
+            </el-form-item>
+          </el-col>
+           <el-col :span="12">
+            <el-form-item label="电源" prop="powerSupply">
+              <el-input v-model="form.powerSupply" placeholder="请输入电源" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="机箱" prop="chassis">
+              <el-input v-model="form.chassis" placeholder="请输入机箱" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="内存配置" prop="memory">
+          <el-row :gutter="10" style="width: 100%">
+            <el-col :span="10">
+              <el-input
+                v-model="form.memoryBrandAndModel"
+                placeholder="品牌型号(如:海盗船复仇者)"
+              />
+            </el-col>
+            <el-col :span="7">
+              <el-select v-model="form.memoryType" placeholder="类型" style="width: 100%">
+                <el-option
+                  v-for="item in memoryTypeList"
+                  :key="item.type"
+                  :label="item.type"
+                  :value="item.type"
+                />
+              </el-select>
+            </el-col>
+            <el-col :span="7">
+              <el-select v-model="form.memoryFrequency" placeholder="频率" style="width: 100%">
+                <el-option
+                  v-for="item in memoryFrequencyList"
+                  :key="item.frequency"
+                  :label="`${item.frequency} MHz`"
+                  :value="item.frequency"
+                />
+              </el-select>
+            </el-col>
+          </el-row>
         </el-form-item>
-        <!-- 部门用户显示部门名称（只读） -->
-        <el-form-item label="部门名称" v-if="!isAdmin">
-          <el-input v-model="form.deptName" disabled placeholder="自动填入当前部门" />
+
+        <el-form-item label="显卡配置" class="is-required">
+           <el-row :gutter="10" style="width: 100%">
+            <el-col :span="8">
+              <el-form-item prop="graphicsCardBrand">
+                 <el-input v-model="form.graphicsCardBrand" placeholder="品牌(如:七彩虹)" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+               <el-form-item prop="graphicsCardModel">
+                  <el-select 
+                    v-model="form.graphicsCardModel" 
+                    placeholder="芯片型号(如:3060)"
+                    filterable
+                    remote
+                    :remote-method="remoteGpuMethod"
+                    :loading="gpuLoading"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in gpuList"
+                      :key="item.model"
+                      :label="`${item.brand} ${item.model}`"
+                      :value="item.model"
+                    />
+                  </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item prop="graphicsCardSpecific">
+                 <el-input v-model="form.graphicsCardSpecific" placeholder="具体型号(如:Ultra W)" />
+              </el-form-item>
+            </el-col>
+          </el-row>
         </el-form-item>
-        <el-form-item label="商品名称" prop="productName">
-          <el-input v-model="form.productName" placeholder="请输入商品名称" />
-        </el-form-item>
-        <el-form-item label="租售类型" prop="productType">
-          <el-select v-model="form.productType" placeholder="请选择租售类型">
-            <el-option
-              v-for="dict in product_type"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="日租金" prop="rentPrice">
-          <el-input v-model="form.rentPrice" placeholder="请输入日租金" />
-        </el-form-item>
-        <el-form-item label="销售价格" prop="salePrice">
-          <el-input v-model="form.salePrice" placeholder="请输入销售价格" />
-        </el-form-item>
-        <el-form-item label="库存数量" prop="stockQuantity">
-          <el-input v-model="form.stockQuantity" placeholder="请输入库存数量" />
-        </el-form-item>
-        <el-form-item label="可租赁数量" prop="availableRent">
-          <el-input v-model="form.availableRent" placeholder="请输入可租赁数量" />
-        </el-form-item>
-       <!-- CPU组件：可输入模糊匹配的下拉框 -->
-<el-form-item label="CPU" prop="cpu">
-  <el-select 
-    v-model="form.cpu" 
-    placeholder="请选择CPU（支持模糊搜索）"
-    filterable
-    remote
-    :remote-method="remoteCpuMethod"
-    :loading="cpuLoading"
-  >
-    <el-option
-      v-for="item in cpuList"
-      :key="item.model"
-      :label="`${item.brand} ${item.model}`"
-      :value="item.model"
-    />
-  </el-select>
-</el-form-item>
-        <el-form-item label="主板" prop="motherboard">
-          <el-input v-model="form.motherboard" placeholder="请输入主板" />
-        </el-form-item>
-        <!-- 内存组件：品牌（文本框）+ 类型（下拉框）+ 频率（下拉框） -->
-<el-form-item label="内存" prop="memory">
-  <el-row :gutter="10">
-    <el-col :span="8">
-      <el-input
-        v-model="form.memoryBrandAndModel"
-        placeholder="请输入内存品牌型号（如：宏碁冰刃）"
-      />
-    </el-col>
-    <el-col :span="8">
-      <el-select v-model="form.memoryType" placeholder="请选择内存类型">
-        <el-option
-          v-for="item in memoryTypeList"
-          :key="item.type"
-          :label="item.type"
-          :value="item.type"
-        />
-      </el-select>
-    </el-col>
-    <el-col :span="8">
-      <el-select v-model="form.memoryFrequency" placeholder="请选择内存频率">
-        <el-option
-          v-for="item in memoryFrequencyList"
-          :key="item.frequency"
-          :label="`${item.frequency} MHz`"
-          :value="item.frequency"
-        />
-      </el-select>
-    </el-col>
-  </el-row>
-</el-form-item>
-<el-form-item label="固态硬盘" prop="ssd">
-  <el-input v-model="form.ssd" placeholder="请输入固态硬盘型号" />
-</el-form-item>
-     <!-- 显卡组件：品牌（文本框）+ 型号（下拉框）+ 具体型号（文本框） -->
-<el-form-item label="显卡品牌" prop="graphicsCardBrand">
-  <el-input v-model="form.graphicsCardBrand" placeholder="请输入显卡品牌（如：七彩虹）" />
-</el-form-item>
-<el-form-item label="显卡型号" prop="graphicsCardModel">
-  <el-select 
-    v-model="form.graphicsCardModel" 
-    placeholder="请选择显卡型号（支持模糊搜索）"
-    filterable
-    remote
-    :remote-method="remoteGpuMethod"
-    :loading="gpuLoading"
-  >
-    <el-option
-      v-for="item in gpuList"
-      :key="item.model"
-      :label="`${item.brand} ${item.model}`"
-      :value="item.model"
-    />
-  </el-select>
-</el-form-item>
-<el-form-item label="显卡具体型号" prop="graphicsCardSpecific">
-  <el-input v-model="form.graphicsCardSpecific" placeholder="请输入具体型号（如：Ultra W OC）" />
-</el-form-item>
-        <el-form-item label="散热器" prop="cooler">
-          <el-input v-model="form.cooler" placeholder="请输入散热器" />
-        </el-form-item>
-        <el-form-item label="电源" prop="powerSupply">
-          <el-input v-model="form.powerSupply" placeholder="请输入电源" />
-        </el-form-item>
-        <el-form-item label="机箱" prop="chassis">
-          <el-input v-model="form.chassis" placeholder="请输入机箱" />
-        </el-form-item>
-        <el-form-item label="图片URL" prop="imageUrl">
-          <image-upload v-model="form.imageUrl"/>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio
-              v-for="dict in sys_normal_disable"
-              :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
+
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -517,60 +577,104 @@ function handleAdd() {
   }
 }
 
-/** 修改按钮操作 */
-async function handleUpdate(row) {
-  console.log('开始修改商品，传入行数据:', row)
-  resetForm()
-  const targetId = row?.id || ids.value[0]
-  if (!targetId) {
-    console.warn('未找到目标商品ID')
-    return
+/** 解析显卡信息 */
+function parseGraphicsCard(brandAndModel) {
+  if (!brandAndModel) return {};
+  
+  // Basic cleanup
+  let processedInfo = brandAndModel
+    .replace(/([\u4e00-\u9fa5])([A-Z])/g, '$1 $2')
+    .replace(/(RTX\s*\d+)(Ti)/gi, '$1 $2')
+    .replace(/(RTX|RX|GT)\s*(\d+)/gi, '$1 $2');
+  
+  const cardParts = processedInfo.trim().split(/\s+/);
+  if (!cardParts.length) return {};
+
+  const brand = cardParts.shift(); // First part is brand
+  
+  const keywords = ["NVIDIA", "AMD", "INTEL", "GEFORCE", "RADEON", "ARC", "RTX", "RX", "GT", "TI", "SUPER", "XT", "XTX"];
+  
+  // Find where the model ends (i.e., where specific starts)
+  // Specific usually starts with something that is NOT a keyword and NOT a number
+  const modelEndIndex = cardParts.findIndex((part) => {
+    const upperPart = part.toUpperCase();
+    return !keywords.includes(upperPart) && !/^\d+$/.test(part);
+  });
+  
+  let modelParts = [];
+  let specificParts = [];
+  
+  if (modelEndIndex === -1) {
+    modelParts = cardParts;
+  } else {
+    modelParts = cardParts.slice(0, modelEndIndex);
+    specificParts = cardParts.slice(modelEndIndex);
+  }
+  
+  return {
+    brand: brand,
+    model: modelParts.join(' '),
+    specific: specificParts.join(' ')
+  };
+}
+
+/** 解析内存信息 */
+function parseMemory(info) {
+  if (!info) return {}
+  // 匹配: "BrandAndModel Type Frequency MHz"
+  // Try to match DDR first to split
+  const ddrMatch = info.match(/\s+(DDR\d+)/i);
+  if (ddrMatch) {
+      const type = ddrMatch[1].toUpperCase();
+      const parts = info.split(ddrMatch[0]);
+      const brandAndModel = parts[0].trim();
+      let frequency = null;
+      
+      // Look for frequency in the rest
+      if (parts[1]) {
+          const freqMatch = parts[1].match(/(\d+)/);
+          if (freqMatch) {
+              frequency = parseInt(freqMatch[1], 10);
+          }
+      }
+      return { brandAndModel, type, frequency };
   }
 
+  // Fallback regex if no DDR found
+  const memoryRegex = /^(.*?)(?:\s+(\d+))?(\s*MHz)?$/i
+  const match = memoryRegex.exec(info.trim())
+  if (match) {
+    return {
+      brandAndModel: match[1]?.trim() || '',
+      type: null, 
+      frequency: match[2] ? parseInt(match[2], 10) : null
+    }
+  }
+  return {}
+}
+
+/** 修改按钮操作 */
+async function handleUpdate(row) {
+  resetForm()
+  const targetId = row?.id || ids.value[0]
+  if (!targetId) return
+
   try {
-    console.log('获取商品详情，ID:', targetId)
     const response = await getProduct(targetId)
-    console.log('商品详情接口返回:', response)
-    
     const productData = response.data || {}
-    console.log('商品数据:', productData)
     Object.assign(form, productData)
 
-    // 解析显卡信息（增加空值保护）
-    const fullGraphicsInfo = form.graphicsCard || ''
-    if (fullGraphicsInfo) {
-      // 预处理字符串
-      let processedInfo = fullGraphicsInfo
-        .replace(/([\u4e00-\u9fa5])([A-Z])/g, '$1 $2') // 中文后加空格
-        .replace(/(RTX\s*\d+)(Ti)/gi, '$1 $2')
-        .replace(/(RTX|RX|GT)\s*(\d+)/gi, '$1 $2')
-      
-      const cardParts = processedInfo.trim().split(/\s+/)
-      if (cardParts.length) {
-        form.graphicsCardBrand = cardParts[0]
-        
-        // 提取型号部分
-        const modelEndIndex = cardParts.findIndex((part, index) => {
-          if (index === 0) return false
-          const upperPart = part.toUpperCase()
-          return !["NVIDIA", "AMD", "INTEL", "GEFORCE", "RADEON", "ARC", "RTX", "RX", "GT", "TI", "SUPER", "XT", "XTX"].includes(upperPart) && !/^\d+$/.test(part)
-        })
-        
-        const modelParts = modelEndIndex > 0 ? cardParts.slice(1, modelEndIndex) : cardParts.slice(1)
-        form.graphicsCardModel = modelParts.join(' ')
-        form.graphicsCardSpecific = modelEndIndex > 0 ? cardParts.slice(modelEndIndex).join(' ') : ''
-      }
-    }
+    // 解析显卡信息
+    const gpuInfo = parseGraphicsCard(form.graphicsCard)
+    if (gpuInfo.brand) form.graphicsCardBrand = gpuInfo.brand
+    if (gpuInfo.model) form.graphicsCardModel = gpuInfo.model
+    if (gpuInfo.specific) form.graphicsCardSpecific = gpuInfo.specific
 
-    // 解析内存信息（增加正则匹配容错）
-    const memoryText = form.memory || ''
-    const memoryRegex = /^(.*?)(?:\s+(DDR\d+))?(?:\s+(\d+))?(\s*MHz)?$/i
-    const match = memoryRegex.exec(memoryText.trim())
-    if (match) {
-      form.memoryBrandAndModel = match[1]?.trim() || ''
-      form.memoryType = match[2] || null
-      form.memoryFrequency = match[3] ? parseInt(match[3], 10) : null
-    }
+    // 解析内存信息
+    const memInfo = parseMemory(form.memory)
+    if (memInfo.brandAndModel) form.memoryBrandAndModel = memInfo.brandAndModel
+    if (memInfo.type) form.memoryType = memInfo.type
+    if (memInfo.frequency) form.memoryFrequency = memInfo.frequency
 
     // 部门信息回显
     if (form.deptId && !isAdmin.value) {
@@ -583,9 +687,8 @@ async function handleUpdate(row) {
 
     open.value = true
     title.value = "修改商品"
-    console.log('修改对话框已打开')
   } catch (error) {
-    console.error('获取商品详情失败 - 详细错误:', error)
+    console.error('获取商品详情失败:', error)
     proxy?.$modal?.msgError(`获取商品详情失败: ${error.message || '未知错误'}`)
   }
 }

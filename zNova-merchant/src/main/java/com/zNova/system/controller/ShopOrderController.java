@@ -1,5 +1,6 @@
 package com.zNova.system.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -108,15 +109,23 @@ public class ShopOrderController extends BaseController
 
     /**
      * 商家确认收到归还
+     * @param orderId 订单ID
+     * @param body 请求体，可包含 damageDeduct（损坏扣款金额）
      */
     // @PreAuthorize("@ss.hasPermi('system:order:edit')")
     @Log(title = "确认归还", businessType = BusinessType.UPDATE)
     @PutMapping("/confirmReturn/{orderId}")
-    public AjaxResult confirmReturn(@PathVariable Long orderId)
+    public AjaxResult confirmReturn(@PathVariable Long orderId, @RequestBody(required = false) JSONObject body)
     {
         try {
-            // 调用服务层方法，实现库存恢复和状态更新
-            shopOrderService.confirmReturn(orderId);
+            // 获取损坏扣款金额（可选参数）
+            BigDecimal damageDeduct = null;
+            if (body != null && body.containsKey("damageDeduct")) {
+                damageDeduct = body.getBigDecimal("damageDeduct");
+            }
+            
+            // 调用服务层方法，实现库存恢复、押金解冻和状态更新
+            shopOrderService.confirmReturn(orderId, damageDeduct);
             return success();
         } catch (ServiceException e) {
             return error(e.getMessage());

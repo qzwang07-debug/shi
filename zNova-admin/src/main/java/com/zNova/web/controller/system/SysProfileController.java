@@ -1,5 +1,7 @@
 package com.zNova.web.controller.system;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import cn.xuyanwu.spring.file.storage.FileInfo;
+import cn.xuyanwu.spring.file.storage.FileStorageService;
 import com.zNova.common.annotation.Log;
 import com.zNova.common.config.RuoYiConfig;
 import com.zNova.common.core.controller.BaseController;
@@ -20,9 +24,7 @@ import com.zNova.common.enums.BusinessType;
 import com.zNova.common.utils.DateUtils;
 import com.zNova.common.utils.SecurityUtils;
 import com.zNova.common.utils.StringUtils;
-import com.zNova.common.utils.file.FileUploadUtils;
 import com.zNova.common.utils.file.FileUtils;
-import com.zNova.common.utils.file.MimeTypeUtils;
 import com.zNova.framework.web.service.TokenService;
 import com.zNova.system.service.ISysUserService;
 
@@ -40,6 +42,9 @@ public class SysProfileController extends BaseController
 
     @Autowired
     private TokenService tokenService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     /**
      * 个人信息
@@ -127,20 +132,32 @@ public class SysProfileController extends BaseController
         if (!file.isEmpty())
         {
             LoginUser loginUser = getLoginUser();
-            String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION, true);
-            if (userService.updateUserAvatar(loginUser.getUserId(), avatar))
+            try
             {
-                String oldAvatar = loginUser.getUser().getAvatar();
-                if (StringUtils.isNotEmpty(oldAvatar))
+                String objectPath = "avatar/" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd")) + "/";
+                FileInfo fileInfo = fileStorageService.of(file)
+                        .setPath(objectPath)
+                        .upload();
+                String avatar = fileInfo.getUrl();
+                
+                if (userService.updateUserAvatar(loginUser.getUserId(), avatar))
                 {
-                    FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
+                    String oldAvatar = loginUser.getUser().getAvatar();
+                    if (StringUtils.isNotEmpty(oldAvatar) && !oldAvatar.startsWith("http"))
+                    {
+                        FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
+                    }
+                    AjaxResult ajax = AjaxResult.success();
+                    ajax.put("imgUrl", avatar);
+                    loginUser.getUser().setAvatar(avatar);
+                    tokenService.setLoginUser(loginUser);
+                    return ajax;
                 }
-                AjaxResult ajax = AjaxResult.success();
-                ajax.put("imgUrl", avatar);
-                // 更新缓存用户头像
-                loginUser.getUser().setAvatar(avatar);
-                tokenService.setLoginUser(loginUser);
-                return ajax;
+                return AjaxResult.error("头像更新失败");
+            }
+            catch (Exception e)
+            {
+                return AjaxResult.error("头像上传失败：" + e.getMessage());
             }
         }
         return error("上传图片异常，请联系管理员");

@@ -69,6 +69,10 @@ public class AppUser extends BaseEntity
     @Excel(name = "余额")
     private BigDecimal balance;
 
+    /** 冻结押金（租赁订单中的押金，归还确认后解冻） */
+    @Excel(name = "冻结押金")
+    private BigDecimal frozenDeposit;
+
     /** 验证码（非数据库字段） */
     private String code;
 
@@ -205,6 +209,16 @@ public class AppUser extends BaseEntity
         this.balance = balance;
     }
 
+    public BigDecimal getFrozenDeposit()
+    {
+        return frozenDeposit;
+    }
+
+    public void setFrozenDeposit(BigDecimal frozenDeposit)
+    {
+        this.frozenDeposit = frozenDeposit;
+    }
+
     public String getCode()
     {
         return code;
@@ -241,6 +255,7 @@ public class AppUser extends BaseEntity
                 .append("loginDate", getLoginDate())
                 .append("creditScore", getCreditScore())
                 .append("balance", getBalance())
+                .append("frozenDeposit", getFrozenDeposit())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

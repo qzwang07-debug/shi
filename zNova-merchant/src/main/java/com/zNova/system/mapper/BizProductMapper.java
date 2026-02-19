@@ -91,4 +91,11 @@ public interface BizProductMapper
      * @return 更新行数
      */
     public int increaseStock(@Param("id") Long id, @Param("quantity") Long quantity);
+
+    /**
+     * 查询低库存商品（库存<=预警阈值）
+     * @param deptId 商家ID（可选，传null查询所有）
+     * @return 低库存商品列表
+     */
+    public List<BizProduct> selectLowStockProducts(@Param("deptId") Long deptId);
 }

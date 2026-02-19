@@ -70,6 +70,17 @@
                   <div class="desc">极客信用分</div>
                 </div>
               </div>
+
+              <!-- 冻结押金展示 -->
+              <div class="stat-item">
+                <div class="stat-icon-wrapper">
+                  <el-icon :size="32" color="#e6a23c"><Money /></el-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="label">{{ formattedDeposit }}</div>
+                  <div class="desc">冻结押金</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -210,23 +221,25 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Camera, Trophy, Iphone, EditPen, LocationInformation, Lock, SwitchButton,
-  Wallet, Box, Van, CircleCheck, ArrowRight
+  Wallet, Box, Van, CircleCheck, ArrowRight, Money
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateProfile, updatePassword } from '@/api/portal/user'
-import { getAppUserInfo } from '@/api/appLogin'
+import useAppUserStore from '@/store/modules/appUser'
 import Header from '@/views/computerMarket/Header.vue'
-import { formatAvatarUrl, DEFAULT_AVATAR, handleAvatarError } from '@/utils/avatarUtils'
+import { handleAvatarError } from '@/utils/avatarUtils'
 
 const router = useRouter()
+const appUserStore = useAppUserStore()
 
-// 用户信息 (去除余额和性别，保留核心展示)
-const userInfo = ref({
+// 用户信息
+const userInfo = computed(() => appUserStore.userInfo || {
   username: '',
   nickname: '',
   avatar: '',
   phonenumber: '',
-  creditScore: 700, // 默认700
+  creditScore: 500,
+  frozenDeposit: 0
 })
 
 // 环境变量配置
@@ -236,7 +249,7 @@ const uploadImgUrl = ref(import.meta.env.VITE_APP_BASE_API + "/app/user/avatar")
 const dialogVisible = ref(false)
 const pwdDialogVisible = ref(false)
 
-// 编辑表单 (去除了性别)
+// 编辑表单
 const editForm = reactive({
   nickname: '',
   phonenumber: ''
@@ -266,50 +279,43 @@ const pwdRules = {
 }
 
 // 计算属性
-const appToken = computed(() => localStorage.getItem('app_token'))
+const appToken = computed(() => appUserStore.token)
 
-const userAvatar = computed(() => {
-  return userInfo.value.avatar ? formatAvatarUrl(userInfo.value.avatar) : ''
-})
+const userAvatar = computed(() => appUserStore.userAvatar)
 
-// 计算等级 (静态逻辑，基于信用分模拟等级，让页面更丰富)
+// 计算等级
 const userLevel = computed(() => {
-  const score = userInfo.value.creditScore || 700
-  if (score > 800) return 6
-  if (score > 750) return 5
-  if (score > 700) return 4
-  return 3
+  const score = userInfo.value.creditScore || 500
+  if (score >= 800) return 6
+  if (score >= 700) return 5
+  if (score >= 600) return 4
+  if (score >= 550) return 3
+  return 2
 })
 
-// 信用分百分比 (用于环形进度条，假设满分950)
+// 信用分百分比
 const creditPercentage = computed(() => {
-  const score = userInfo.value.creditScore || 700
+  const score = userInfo.value.creditScore || 500
   return Math.min(100, Math.round((score / 950) * 100))
+})
+
+// 冻结押金格式化
+const formattedDeposit = computed(() => {
+  const amount = userInfo.value.frozenDeposit || 0
+  return '¥' + Number(amount).toFixed(2)
 })
 
 // 方法
 const getUserInfo = async () => {
-  const token = localStorage.getItem('app_token')
-  if (!token) return router.push('/portal/login')
-  
-  try {
-    const res = await getAppUserInfo()
-    userInfo.value = {
-      ...userInfo.value,
-      ...res.user,
-      creditScore: res.user.creditScore || 750 // 给一个默认好看的分数
-    }
-  } catch (err) {
-    localStorage.removeItem('app_token')
-    router.push('/portal/login')
-  }
+  if (!appUserStore.isLoggedIn) return router.push('/portal/login')
+  await appUserStore.fetchUserInfo()
 }
 
 const handleAvatarSuccess = (response) => {
   if (response.code === 200) {
     const avatarUrl = response.avatar || (response.data && response.data.avatar)
     if (avatarUrl) {
-      userInfo.value.avatar = avatarUrl
+      appUserStore.updateLocalUserInfo({ avatar: avatarUrl })
       ElMessage.success('头像更新成功')
     }
   } else {
@@ -361,7 +367,7 @@ const savePassword = async () => {
 
 const handleLogout = () => {
   ElMessageBox.confirm('确定要退出登录吗?', '提示', { confirmButtonText: '退出', cancelButtonText: '取消' }).then(() => {
-    localStorage.removeItem('app_token')
+    appUserStore.clearUserInfo()
     router.push('/portal/login')
   })
 }
@@ -513,6 +519,7 @@ onMounted(() => getUserInfo())
   padding-top: 70px; /* 关键：把右侧数据也往下推 */
   display: flex;
   align-items: center;
+  gap: 30px;
 }
 
 .stat-item {
@@ -523,6 +530,16 @@ onMounted(() => getUserInfo())
   padding: 10px 20px;
   border-radius: 12px;
   border: 1px solid #f0f0f0;
+}
+
+.stat-icon-wrapper {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #fdf6ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .score-text {

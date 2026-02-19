@@ -6,19 +6,25 @@
         <artifactId>zNova</artifactId>
         <version>3.9.0</version>
     </parent>
+
     <artifactId>zNova-merchant</artifactId>
-    <packaging>war</packaging>
-    <name>zNova-merchant Maven Webapp</name>
-    <url>http://maven.apache.org</url>
+    <packaging>jar</packaging>
+
+    <name>zNova-merchant</name>
+
     <dependencies>
-            <!-- 核心模块-->
-            <dependency>
-                <groupId>com.zNova</groupId>
-                <artifactId>zNova-framework</artifactId>
-            </dependency>
-
-
+        <!-- 核心模块 -->
+        <dependency>
+            <groupId>com.zNova</groupId>
+            <artifactId>zNova-framework</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-http</artifactId>
+            <version>5.8.30</version>
+        </dependency>
     </dependencies>
+
     <build>
         <finalName>zNova-merchant</finalName>
     </build>

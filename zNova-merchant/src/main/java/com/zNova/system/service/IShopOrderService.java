@@ -1,5 +1,6 @@
 package com.zNova.system.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import com.zNova.system.domain.ShopOrder;
 import org.springframework.stereotype.Service;
@@ -74,11 +75,13 @@ public interface IShopOrderService
      * 管理员审核退款
      */
     void adminAuditRefund(Long orderId, boolean pass);
+
     /**
      * 商家确认归还（租赁业务）
      * @param orderId 订单ID
+     * @param damageDeduct 损坏扣款金额（可选，为0或null时全额返还押金）
      */
-    void confirmReturn(Long orderId);
+    void confirmReturn(Long orderId, BigDecimal damageDeduct);
 
     /**
      * 根据用户ID查询用户信息

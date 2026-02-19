@@ -101,10 +101,12 @@ import { User, Lock, Key, Shop, ArrowRight } from '@element-plus/icons-vue';
 import { getCodeImg } from "@/api/login";
 import { appLogin } from "@/api/appLogin";
 import { setAppToken } from "@/utils/auth";
+import useAppUserStore from "@/store/modules/appUser";
 
 
 const router = useRouter();
 const route = useRoute();
+const appUserStore = useAppUserStore();
 const loginRef = ref(null);
 
 // 数据状态
@@ -148,8 +150,11 @@ const handleLogin = () => {
     if (valid) {
       loading.value = true;
       appLogin(loginForm.username, loginForm.password, loginForm.code, loginForm.uuid)
-        .then(res => {
+        .then(async res => {
+          appUserStore.setToken(res.token);
           setAppToken(res.token);
+          // 登录成功后立即拉取用户信息
+          await appUserStore.fetchUserInfo();
           ElMessage.success('登录成功，欢迎回来');
           router.push({ path: redirect.value || "/computer-market" });
         })

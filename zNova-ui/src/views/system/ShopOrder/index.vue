@@ -158,6 +158,39 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 确认收货/退还押金弹窗 -->
+    <el-dialog title="确认收货 & 押金结算" v-model="confirmReturnOpen" width="500px" append-to-body>
+      <el-form label-width="120px">
+        <el-form-item label="订单编号：">
+          <span>{{ confirmForm.orderNo }}</span>
+        </el-form-item>
+        <el-form-item label="订单押金：">
+          <span style="color: #f56c6c; font-weight: bold;">¥{{ confirmForm.depositAmount }}</span>
+        </el-form-item>
+        <el-form-item label="损坏扣款：">
+          <el-input-number 
+            v-model="confirmForm.damageDeduct" 
+            :min="0" 
+            :max="confirmForm.depositAmount" 
+            :precision="2" 
+            :step="10"
+            controls-position="right"
+            style="width: 100%" 
+          />
+        </el-form-item>
+        <div style="margin-left: 120px; color: #909399; font-size: 12px; line-height: 1.5;">
+          <p>扣除金额：<span style="color: #f56c6c">¥{{ confirmForm.damageDeduct ? confirmForm.damageDeduct.toFixed(2) : '0.00' }}</span></p>
+          <p>退还用户：<span style="color: #67c23a">¥{{ (confirmForm.depositAmount - (confirmForm.damageDeduct || 0)).toFixed(2) }}</span></p>
+        </div>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="confirmReturnOpen = false">取 消</el-button>
+          <el-button type="primary" @click="submitConfirmReturn">确认收货</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -325,21 +358,49 @@ function handleShip(row) {
   }).catch(() => {});
 }
 
-/** 确认归还 */
+/** 确认归还弹窗相关变量 */
+const confirmReturnOpen = ref(false);
+const confirmForm = ref({
+  orderId: null,
+  orderNo: '',
+  depositAmount: 0,
+  damageDeduct: 0
+});
+
+/** 打开确认归还弹窗 */
 function handleConfirmReturn(row) {
-  ElMessageBox.confirm('确认收到该订单的归还物品吗？', "系统提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-    type: "warning"
+  confirmForm.value = {
+    orderId: row.orderId,
+    orderNo: row.orderNo,
+    depositAmount: row.depositAmount || 0,
+    damageDeduct: 0
+  };
+  confirmReturnOpen.value = true;
+}
+
+/** 提交确认归还 */
+function submitConfirmReturn() {
+  if (confirmForm.value.damageDeduct < 0) {
+    ElMessage.error("扣款金额不能为负数");
+    return;
+  }
+  if (confirmForm.value.damageDeduct > confirmForm.value.depositAmount) {
+    ElMessage.error("扣款金额不能大于押金金额");
+    return;
+  }
+  
+  // loading.value = true; // 不直接操作全局列表loading，避免闪烁
+  request({
+      url: `/merchant/order/confirmReturn/${confirmForm.value.orderId}`,
+      method: 'put',
+      data: {
+          damageDeduct: confirmForm.value.damageDeduct
+      }
   }).then(() => {
-    return request({
-        url: `/merchant/order/confirmReturn/${row.orderId}`,
-        method: 'put'
-    });
-  }).then(() => {
+    confirmReturnOpen.value = false;
     getList();
-    ElMessage.success("确认收货成功");
-  }).catch(() => {});
+    ElMessage.success("确认收货并处理押金成功");
+  });
 }
 
 /** 导出 */

@@ -1,5 +1,6 @@
 package com.zNova.system.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.zNova.common.exception.ServiceException;
@@ -178,10 +179,12 @@ public class ShopOrderServiceImpl implements IShopOrderService
 
     /**
      * 商家确认归还（租赁业务）
+     * @param orderId 订单ID
+     * @param damageDeduct 损坏扣款金额（可选，为0或null时全额返还押金）
      */
     @Transactional
     @Override
-    public void confirmReturn(Long orderId) {
+    public void confirmReturn(Long orderId, BigDecimal damageDeduct) {
         // 1. 查询订单信息
         ShopOrder order = shopOrderMapper.selectShopOrderByOrderId(orderId);
         if (order == null) {
@@ -196,13 +199,39 @@ public class ShopOrderServiceImpl implements IShopOrderService
         // 3. 恢复库存
         restoreInventory(orderId);
 
-        // 4. 更新订单状态为 "3=已完成"
+        // 4. 处理押金解冻
+        BigDecimal depositAmount = order.getDepositAmount();
+        if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) > 0) {
+            // 计算实际返还金额 = 剩余押金 - 损坏扣款
+            BigDecimal deductAmount = damageDeduct != null ? damageDeduct : BigDecimal.ZERO;
+            // 扣款不能超过剩余押金
+            if (deductAmount.compareTo(depositAmount) > 0) {
+                deductAmount = depositAmount;
+            }
+            BigDecimal refundAmount = depositAmount.subtract(deductAmount);
+            
+            // 解冻押金：从用户冻结押金中扣除，将返还金额加到余额
+            appUserMapper.unfreezeDeposit(order.getUserId(), depositAmount, refundAmount);
+            
+            System.out.println("押金处理：订单ID=" + orderId + ", 原押金=" + depositAmount 
+                    + ", 损坏扣款=" + deductAmount + ", 返还金额=" + refundAmount);
+        }
+
+        // 5. 更新订单状态为 "3=已完成"
         order.setStatus(STATUS_COMPLETED);
         order.setUpdateTime(DateUtils.getNowDate());
         shopOrderMapper.updateShopOrder(order);
 
-        // 5. 添加操作日志
-        System.out.println("商家确认归还订单：订单ID=" + orderId + ", 商品数量=" + order.getShopOrderItemList().size());
+        // 6. 判断是否逾期归还，仅正常归还才增加信用分
+        boolean isOverdue = "1".equals(order.getIsOverdue());
+        if (!isOverdue) {
+            // 正常归还，增加50信用分
+            appUserMapper.updateCreditScoreDelta(order.getUserId(), 50);
+            System.out.println("商家确认归还订单：订单ID=" + orderId + ", 商品数量=" + order.getShopOrderItemList().size() + ", 用户信用分+50（正常归还）");
+        } else {
+            // 逾期归还，不增加信用分
+            System.out.println("商家确认归还订单：订单ID=" + orderId + ", 商品数量=" + order.getShopOrderItemList().size() + ", 用户信用分不增加（逾期归还）");
+        }
     }
     /**
      * 修改订单主

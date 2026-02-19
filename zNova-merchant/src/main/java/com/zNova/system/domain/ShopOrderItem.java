@@ -67,7 +67,24 @@ public class ShopOrderItem extends BaseEntity
     @Excel(name = "部门ID")
     private Long deptId;
 
-    public void setId(Long id) 
+    /** 押金 */
+    @Excel(name = "押金")
+    private BigDecimal deposit;
+
+    /** 已扣逾期天数(用于幂等) */
+    @Excel(name = "已扣逾期天数")
+    private Integer overdueDeductDays;
+
+    /** 关联订单的用户ID（非持久化，用于业务计算） */
+    private Long userId;
+
+    /** 关联订单的押金余额（非持久化，用于业务计算） */
+    private BigDecimal orderDepositAmount;
+
+    /** 关联订单是否已逾期（非持久化，用于业务计算） */
+    private String orderIsOverdue;
+
+    public void setId(Long id)
     {
         this.id = id;
     }
@@ -176,6 +193,56 @@ public class ShopOrderItem extends BaseEntity
         return deptId;
     }
 
+    public void setDeposit(BigDecimal deposit) 
+    {
+        this.deposit = deposit;
+    }
+
+    public BigDecimal getDeposit() 
+    {
+        return deposit;
+    }
+
+    public void setOverdueDeductDays(Integer overdueDeductDays) 
+    {
+        this.overdueDeductDays = overdueDeductDays;
+    }
+
+    public Integer getOverdueDeductDays() 
+    {
+        return overdueDeductDays;
+    }
+
+    public void setUserId(Long userId) 
+    {
+        this.userId = userId;
+    }
+
+    public Long getUserId() 
+    {
+        return userId;
+    }
+
+    public void setOrderDepositAmount(BigDecimal orderDepositAmount) 
+    {
+        this.orderDepositAmount = orderDepositAmount;
+    }
+
+    public BigDecimal getOrderDepositAmount() 
+    {
+        return orderDepositAmount;
+    }
+
+    public void setOrderIsOverdue(String orderIsOverdue) 
+    {
+        this.orderIsOverdue = orderIsOverdue;
+    }
+
+    public String getOrderIsOverdue() 
+    {
+        return orderIsOverdue;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -191,6 +258,8 @@ public class ShopOrderItem extends BaseEntity
             .append("rentEndTime", getRentEndTime())
             .append("rentDays", getRentDays())
             .append("deptId", getDeptId())
+            .append("deposit", getDeposit())
+            .append("overdueDeductDays", getOverdueDeductDays())
             .toString();
     }
 }

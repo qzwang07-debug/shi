@@ -656,6 +656,33 @@
                 </div>
               </div>
             </div>
+
+            <div class="ai-review-section">
+              <div class="ai-review-header">
+                <div class="ai-review-title">
+                  <el-icon><DataAnalysis /></el-icon>
+                  <span>AI 实时评估</span>
+                </div>
+                <div class="ai-style-selector">
+                  <el-radio-group v-model="aiStyle" size="small">
+                    <el-tooltip v-for="opt in aiStyleOptions" :key="opt.value" :content="opt.desc" placement="top">
+                      <el-radio-button :label="opt.value">{{ opt.label }}</el-radio-button>
+                    </el-tooltip>
+                  </el-radio-group>
+                </div>
+                <el-button
+                  type="primary"
+                  size="small"
+                  :loading="aiReviewLoading"
+                  @click="handleAiReview"
+                >
+                  {{ aiReviewText }}
+                </el-button>
+              </div>
+              <div v-if="aiReviewTypedContent" class="ai-review-body markdown-body" v-html="aiReviewHtml"></div>
+              <el-empty v-else description="点击按钮让 AI 实时点评当前配置" :image-size="80" />
+            </div>
+
              <div class="disclaimer">数据基于理论性能推算，实际游戏受场景影响可能波动 ±10%</div>
           </div>
         </el-card>
@@ -677,12 +704,14 @@ import {
 } from '@/api/front/hardware';
 import { addUserBuild, listUserBuild, updateUserBuild, delUserBuild } from '@/api/front/userBuild';
 import { assessPerformance } from '@/api/front/performance';
+import { generateAiReview } from '@/api/system/aiReview';
 import { listSimilarProducts } from '@/api/market/product';
 import useUserStore from '@/store/modules/user'; 
 import { useRouter } from 'vue-router';
 import Header from '../Header.vue';
 import * as echarts from 'echarts';
 import { markRaw } from 'vue';
+import { marked } from 'marked';
 
 // ---------------------------------------------------------------------
 // 组件：状态图标 (StatusIcon)
@@ -750,6 +779,21 @@ const activeHardware = reactive({
 // 评估结果
 const assessResult = ref(null);
 const currentResolution = ref('1080P'); 
+const aiReviewLoading = ref(false);
+const aiReviewContent = ref('');
+const aiReviewTypedContent = ref('');
+let aiTypewriterTimer = null;
+const aiReviewText = computed(() => aiReviewContent.value ? '重新评估' : 'AI 评估');
+const aiReviewHtml = computed(() => {
+  if (!aiReviewTypedContent.value) return '';
+  return marked(aiReviewTypedContent.value);
+});
+const aiStyle = ref('fun');
+const aiStyleOptions = [
+  { value: 'fun', label: '老哥吐槽', desc: '江湖味、接地气' },
+  { value: 'expert', label: '严谨专家', desc: '专业、数据导向' },
+  { value: 'beginner', label: '小白保姆', desc: '温柔、通俗易懂' }
+];
 
 const MAX_FPS_REFERENCE = {
   '1080P': 600, 
@@ -1351,6 +1395,107 @@ function handleRamTypeChange(val) {
   });
 }
 
+function stopAiTypewriter() {
+  if (aiTypewriterTimer) {
+    clearInterval(aiTypewriterTimer);
+    aiTypewriterTimer = null;
+  }
+}
+
+function startAiTypewriter(content) {
+  stopAiTypewriter();
+  aiReviewTypedContent.value = '';
+  if (!content) return;
+
+  let index = 0;
+  aiTypewriterTimer = setInterval(() => {
+    aiReviewTypedContent.value += content.charAt(index);
+    index += 1;
+    if (index >= content.length) {
+      stopAiTypewriter();
+    }
+  }, 12);
+}
+
+function buildAiReviewPayload() {
+  const bestChoice = monitorRecommendation.value?.bestChoice || {};
+  return {
+    title: form.title,
+    cpuModel: form.cpuModel,
+    cpuPrice: Number(form.cpuPrice) || 0,
+    cpuTdp: Number(form.cpuTdp || activeHardware.cpu?.tdp) || 0,
+    moboBrand: form.moboBrand,
+    moboModel: form.moboModel,
+    moboSeries: form.moboSeries,
+    moboPrice: Number(form.moboPrice) || 0,
+    ramBrand: form.ramBrand,
+    ramInterface: form.ramInterface,
+    ramFrequency: form.ramFrequency,
+    ramCapacity: form.ramCapacity,
+    ramPrice: Number(form.ramPrice) || 0,
+    gpuBrand: form.gpuBrand,
+    gpuModel: form.gpuModel,
+    gpuSeries: form.gpuSeries,
+    gpuPrice: Number(form.gpuPrice) || 0,
+    ssdFullName: form.ssdFullName,
+    ssdPrice: Number(form.ssdPrice) || 0,
+    coolerFullName: form.coolerFullName,
+    coolerPrice: Number(form.coolerPrice) || 0,
+    psuBrand: form.psuBrand,
+    psuWattage: form.psuWattage,
+    psuSeries: form.psuSeries,
+    psuPrice: Number(form.psuPrice) || 0,
+    caseFullName: form.caseFullName,
+    casePrice: Number(form.casePrice) || 0,
+    fanFullName: form.fanFullName,
+    fanPrice: Number(form.fanPrice) || 0,
+    totalPrice: Number(form.totalPrice) || 0,
+    totalScore: Number(assessResult.value?.totalScore) || 0,
+    currentResolution: currentResolution.value,
+    bottleneckType: bottleneckInfo.value?.type || '',
+    bottleneckMessage: bottleneckInfo.value?.message || '',
+    bottleneckDetail: bottleneckInfo.value?.detail || '',
+    cpLevel: cpData.value?.level || '',
+    cpDisplayValue: cpData.value?.displayValue ? Number(cpData.value.displayValue) : null,
+    cpPercentage: cpData.value?.percentage ? Number(cpData.value.percentage) : null,
+    monitorBestResolution: bestChoice.resolution || '',
+    monitorBestRefreshRate: bestChoice.refreshRate || '',
+    monitorBestReason: bestChoice.reason || '',
+    monitorOptions: (monitorRecommendation.value?.options || []).map(opt => ({
+      resolution: opt.resolution,
+      refreshRate: opt.refreshRate,
+      desc: opt.desc,
+      best: !!opt.isBest
+    })),
+    games: assessResult.value?.games || [],
+    style: aiStyle.value
+  };
+}
+
+async function handleAiReview() {
+  if (!assessResult.value) {
+    ElMessage.warning('请先完成性能评估');
+    return;
+  }
+
+  aiReviewLoading.value = true;
+  try {
+    const res = await generateAiReview(buildAiReviewPayload());
+    const content = res?.data?.content || res?.data?.aiResponse || '';
+    if (!content) {
+      ElMessage.warning('AI 返回内容为空');
+      return;
+    }
+    aiReviewContent.value = content;
+    startAiTypewriter(content);
+    ElMessage.success('AI 实时评估完成');
+  } catch (error) {
+    console.error('AI 实时评估失败:', error);
+  } finally {
+    aiReviewLoading.value = false;
+  }
+}
+
 function handleAssess() {
   if (!form.cpuModel || !form.gpuModel) {
     ElMessage.warning("请至少选择 CPU 和 显卡 才能进行性能评估");
@@ -1362,6 +1507,9 @@ function handleAssess() {
     ramType: form.ramInterface || 'DDR4',
     ramFrequency: Number(form.ramFrequency) || 3200
   };
+  stopAiTypewriter();
+  aiReviewContent.value = '';
+  aiReviewTypedContent.value = '';
   assessPerformance(reqData).then(res => {
     assessResult.value = res.data; 
     ElMessage.success("评估完成");
@@ -1533,6 +1681,9 @@ function resetForm() {
   form.ramCapacity = '';
   
   assessResult.value = null;
+  stopAiTypewriter();
+  aiReviewContent.value = '';
+  aiReviewTypedContent.value = '';
   currentResolution.value = '1080P';
   Object.keys(activeHardware).forEach(k => activeHardware[k] = null);
 }
@@ -1558,6 +1709,7 @@ window.addEventListener('resize', () => {
 
 // 组件卸载时销毁雷达图实例
 onUnmounted(() => {
+  stopAiTypewriter();
   if(radarChartInstance) {
     radarChartInstance.dispose();
     radarChartInstance = null;
@@ -2077,6 +2229,60 @@ onUnmounted(() => {
   }
 }
 
+.ai-review-section {
+  margin: 10px 12px 0;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+
+  .ai-review-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .ai-review-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    color: #1d4ed8;
+  }
+
+  .ai-style-selector {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    
+    :deep(.el-radio-group) {
+      display: flex;
+      gap: 0;
+    }
+    
+    :deep(.el-radio-button__inner) {
+      padding: 5px 12px;
+      font-size: 12px;
+    }
+  }
+
+  .ai-review-body {
+    white-space: pre-wrap;
+    line-height: 1.7;
+    font-size: 13px;
+    color: #1e293b;
+    max-height: 320px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+  }
+}
+
 
 
 .disclaimer {
@@ -2251,6 +2457,70 @@ onUnmounted(() => {
     padding-top: 6px;
     padding-bottom: 6px;
     line-height: normal;
+  }
+}
+
+.markdown-body {
+  color: #334155;
+  line-height: 1.6;
+  font-size: 14px;
+
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  h1 { font-size: 20px; }
+  h2 { font-size: 18px; }
+  h3 { font-size: 16px; }
+
+  p {
+    margin: 8px 0;
+  }
+
+  ul, ol {
+    margin: 8px 0;
+    padding-left: 24px;
+  }
+
+  li {
+    margin: 4px 0;
+  }
+
+  strong {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  em {
+    color: #64748b;
+  }
+
+  code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    color: #e11d48;
+  }
+
+  blockquote {
+    border-left: 4px solid #6366f1;
+    padding-left: 12px;
+    margin: 12px 0;
+    color: #64748b;
+    background: #f8fafc;
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 16px 0;
   }
 }
 </style>

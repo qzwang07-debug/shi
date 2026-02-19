@@ -63,6 +63,14 @@ public class ShopOrder extends BaseEntity
     @Excel(name = "部门ID")
     private Long deptId;
 
+    /** 押金金额(剩余) */
+    @Excel(name = "押金金额")
+    private BigDecimal depositAmount;
+
+    /** 是否已发生逾期(0否1是) */
+    @Excel(name = "是否逾期", readConverterExp = "0=否,1=是")
+    private String isOverdue;
+
     /** 订单明细信息 */
     private List<ShopOrderItem> shopOrderItemList;
 
@@ -176,6 +184,26 @@ public class ShopOrder extends BaseEntity
         return deptId;
     }
 
+    public void setDepositAmount(BigDecimal depositAmount) 
+    {
+        this.depositAmount = depositAmount;
+    }
+
+    public BigDecimal getDepositAmount() 
+    {
+        return depositAmount;
+    }
+
+    public void setIsOverdue(String isOverdue) 
+    {
+        this.isOverdue = isOverdue;
+    }
+
+    public String getIsOverdue() 
+    {
+        return isOverdue;
+    }
+
     public List<ShopOrderItem> getShopOrderItemList()
     {
         return shopOrderItemList;
@@ -203,6 +231,8 @@ public class ShopOrder extends BaseEntity
             .append("createTime", getCreateTime())
             .append("updateTime", getUpdateTime())
             .append("deptId", getDeptId())
+            .append("depositAmount", getDepositAmount())
+            .append("isOverdue", getIsOverdue())
             .append("shopOrderItemList", getShopOrderItemList())
             .toString();
     }

@@ -28,7 +28,7 @@ service.interceptors.request.use(config => {
   const isRepeatSubmit = (config.headers || {}).repeatSubmit === false
   
   // 检查是否是C端接口
-  const isAppApi = config.url && (config.url.startsWith('/app/') || config.url.startsWith('/front/'))
+  const isAppApi = config.url && (config.url.startsWith('/app/') || config.url.startsWith('/front/') || config.url === '/system/ai/review')
   // 检查是否是注册或登录接口（这些接口不需要token）
   const isAuthApi = config.url && (config.url.includes('/register') || config.url.includes('/login'))
   

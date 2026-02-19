@@ -220,11 +220,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getFrontProduct } from "@/api/front/product";
 import { addToCart as addToCartAPI } from '@/api/shop/cart';
 import { listFrontComment } from '@/api/front/comment';
+import { recordProductView } from '@/api/front/recommend';
 import { ElMessage } from 'element-plus';
 import { handleImageUrl } from '@/utils/ruoyi'
 import {
@@ -286,6 +287,8 @@ const fetchDetail = async () => {
     const response = await getFrontProduct(id);
     if (response.data) {
       product.value = response.data;
+      // 记录用户浏览行为（用于协同过滤推荐）
+      recordProductView(id).catch(() => {});
     } else {
       ElMessage.warning('未找到该商品信息');
     }

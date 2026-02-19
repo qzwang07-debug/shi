@@ -103,6 +103,14 @@ public class BizProduct extends BaseEntity
     @Excel(name = "性能分数")
     private Integer performanceScore;
 
+    /** 库存预警阈值 */
+    @Excel(name = "库存预警阈值")
+    private Long minStock;
+
+    /** 押金(租赁) */
+    @Excel(name = "押金")
+    private BigDecimal deposit;
+
     /** CPU品牌（非数据库字段，联表查询） */
     private String cpuBrand;
 
@@ -353,6 +361,26 @@ public class BizProduct extends BaseEntity
         return performanceScore;
     }
 
+    public void setMinStock(Long minStock)
+    {
+        this.minStock = minStock;
+    }
+
+    public Long getMinStock()
+    {
+        return minStock;
+    }
+
+    public void setDeposit(BigDecimal deposit)
+    {
+        this.deposit = deposit;
+    }
+
+    public BigDecimal getDeposit()
+    {
+        return deposit;
+    }
+
     public void setCpuBrand(String cpuBrand)
     {
         this.cpuBrand = cpuBrand;
@@ -443,6 +471,8 @@ public class BizProduct extends BaseEntity
                 .append("memoryFrequency", getMemoryFrequency())
                 .append("deptId", getDeptId())
                 .append("performanceScore", getPerformanceScore())
+                .append("minStock", getMinStock())
+                .append("deposit", getDeposit())
                 .append("cpuBrand", getCpuBrand())
                 .append("cpuSingleCoreScore", getCpuSingleCoreScore())
                 .append("cpuMultiCoreScore", getCpuMultiCoreScore())
